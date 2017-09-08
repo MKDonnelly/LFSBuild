@@ -1,0 +1,10 @@
+LFS=/mnt/systemdlfs
+ROOT_PASSWD=a
+RUN_TESTS=0
+MAKEJFLAG=4
+
+PART=/dev/sdb2
+LFS_SOURCES=/root/lfs8.1sources
+LINUX_CONFIG=linuxconfig
+SYSTEMD_NET_CONFIG=none
+RESOLV_CONF=/etc/resolv.conf

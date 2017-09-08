@@ -1,0 +1,72 @@
+#!/bin/bash
+
+#This script will check the host system
+#for requirements in building linux
+#from scratch. See the Linux from scratch manual
+#version 8.1 section 2.2 for details.
+
+#Checks to see if the binary is present
+function checkifpresent(){
+   which $@ > /dev/null
+   if [[ "$?" != "0" ]]
+   then
+      echo Failed to find ${1}. Exiting
+      exit 1
+   fi
+}
+
+shlink=$(readlink /bin/sh)
+if [[ "$shlink" != "/bin/bash" ]]
+then
+   echo /bin/sh MUST link to bash! Exiting
+   exit 1
+fi
+
+checkifpresent bash
+checkifpresent ld     #checks for binutils
+checkifpresent bison
+checkifpresent bzip2
+checkifpresent chown  #checks for coreutils
+checkifpresent diff
+checkifpresent find
+checkifpresent gawk
+checkifpresent gcc
+checkifpresent g++
+checkifpresent ldd     #checks for glibc
+checkifpresent grep
+checkifpresent gzip
+checkifpresent m4
+checkifpresent make
+checkifpresent patch
+checkifpresent perl
+checkifpresent sed
+checkifpresent tar
+#Makeinfo requires the texinfo package
+checkifpresent makeinfo
+checkifpresent xz
+
+
+
+
+echo 'int main(){}' > dummy.c && g++ -o dummy dummy.c
+if [ -x dummy ]
+  then echo -n "";  #Don't output anything if compilation is fine
+  else echo "g++ compilation failed"; fi
+rm -f dummy.c dummy
+
+find /usr/lib/ -name 'libgmp.la'
+libgmppresent=$?
+
+find /usr/lib/ -name 'libmpfr.la'
+libmpfrpresent=$?
+
+find /usr/lib -name 'libmpc.la'
+libmpcpresent=$?
+
+if [[ ! ( "$libgmppresent" == "0" && "$libmpfrpresent" == "0" && "$libmpcpresent" == "0" ) || ( "$libgmppresent" == "1" && "$libmpfrpresent" == "1" && "$libmpcpresent" == "1" ) ]]
+then
+   echo Libraries Inconsistent!
+   exit
+fi
+
+

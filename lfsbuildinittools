@@ -1,0 +1,922 @@
+#!/bin/bash
+
+#This script is called by startlfs and build the initial 
+#toolchain as described in LFS Chapter 5. Direct the output
+#of this script to a file for later reference. Configure
+#and compile stdout is directed to /dev/null so that the
+#output is not horribly long.
+
+#Previous Exit If Fail. Exits if the previous command failed.
+function peif(){
+   if [[ "$?" != "0" ]]
+   then
+      echo ALERT ALERT ALERT ALERT
+      echo FAILED AT
+      caller
+      exit 1
+   fi
+}
+
+#Make it easy to get to source dir
+function cs(){
+   cd $LFS/sources
+}
+
+cs
+
+
+#5.4 Binutils pass 1
+echo -e '\n(5.4) Building Binutils Pass 1'
+tar -xf binutils-2.29.tar.bz2
+peif
+cd binutils-2.29
+peif
+
+mkdir -v build
+peif
+cd build
+peif
+
+../configure --prefix=/tools            \
+	     --with-sysroot=$LFS        \
+	     --with-lib-path=/tools/lib \
+	     --target=$LFS_TGT          \
+	     --disable-nls              \
+             --disable-werror > /dev/null
+peif
+
+make -j$MAKEJFLAG > /dev/null
+peif
+
+case $(uname -m) in
+    x86_64) mkdir -v /tools/lib && ln -sv lib /tools/lib64 ;;
+esac
+
+make install > /dev/null
+peif
+
+cs
+\rm -Rf binutils-2.29
+peif
+echo -e '(5.4) Done building Binutils\n'
+
+
+#5.5 Gcc Pass 1
+echo -e '\n(5.5) Building GCC Pass 1'
+tar -xf gcc-7.2.0.tar.xz
+peif
+cd gcc-7.2.0
+peif
+
+tar -xf ../mpfr-3.1.5.tar.xz
+peif
+mv -v mpfr-3.1.5 mpfr
+peif
+tar -xf ../gmp-6.1.2.tar.xz
+peif
+mv -v gmp-6.1.2 gmp
+peif
+tar -xf ../mpc-1.0.3.tar.gz
+peif
+mv -v mpc-1.0.3 mpc
+peif
+
+for file in gcc/config/{linux,i386/linux{,64}}.h
+do
+    cp -u $file{,.orig}
+    sed -e 's@/lib\(64\)\?\(32\)\?/ld@/tools&@g' \
+	-e 's@/usr@/tools@g' $file.orig > $file
+      echo '
+#undef STANDARD_STARTFILE_PREFIX_1
+#undef STANDARD_STARTFILE_PREFIX_2
+#define STANDARD_STARTFILE_PREFIX_1 "/tools/lib/"
+#define STANDARD_STARTFILE_PREFIX_2 ""' >> $file
+      touch $file.orig
+done
+
+case $(uname -m) in
+    x86_64)
+	sed -e '/m64=/s/lib64/lib/' \
+	    -i.orig gcc/config/i386/t-linux64
+	;;
+esac
+
+mkdir -v build
+peif
+cd build
+peif
+
+../configure                                       \
+    --target=$LFS_TGT                              \
+    --prefix=/tools                                \
+    --with-glibc-version=2.11                      \
+    --with-sysroot=$LFS                            \
+    --with-newlib                                  \
+    --without-headers                              \
+    --with-local-prefix=/tools                     \
+    --with-native-system-header-dir=/tools/include \
+    --disable-nls                                  \
+    --disable-shared                               \
+    --disable-multilib                             \
+    --disable-decimal-float                        \
+    --disable-threads                              \
+    --disable-libatomic                            \
+    --disable-libgomp                              \
+    --disable-libmpx                               \
+    --disable-libquadmath                          \
+    --disable-libssp                               \
+    --disable-libvtv                               \
+    --disable-libstdcxx                            \
+    --enable-languages=c,c++ > /dev/null
+peif
+
+make -j$MAKEJFLAG > /dev/null
+peif
+make install > /dev/null
+peif
+
+cs
+\rm -Rf gcc-7.2.0
+peif
+echo -e '(5.5) Done Building GCC\n'
+
+
+#5.6 Linux API Headers
+echo -e '\n(5.6) Building Linux API Headers'
+tar -xf linux-4.12.7.tar.xz
+peif
+cd linux-4.12.7
+peif
+
+make mrproper > /dev/null
+peif
+
+make INSTALL_HDR_PATH=dest headers_install > /dev/null
+peif
+cp -r dest/include/* /tools/include
+peif
+
+cs
+\rm -Rf linux-4.12.7
+peif
+echo -e '(5.6) Done Building Linux API Headers\n'
+
+
+#5.7 Glibc
+echo -e '\n(5.7) Building Glibc'
+tar -xf glibc-2.26.tar.xz
+peif
+cd glibc-2.26
+peif
+
+mkdir -v build
+peif
+cd build
+peif
+
+../configure                             \
+    --prefix=/tools                    \
+    --host=$LFS_TGT                    \
+    --build=$(../scripts/config.guess) \
+    --enable-kernel=3.2             \
+    --with-headers=/tools/include      \
+    libc_cv_forced_unwind=yes          \
+    libc_cv_c_cleanup=yes > /dev/null
+peif
+
+make -j$MAKEJFLAG > /dev/null
+peif
+
+make install > /dev/null
+peif
+
+#Testing toolchain
+echo 'int main(){}' > dummy.c
+$LFS_TGT-gcc dummy.c
+readelf -l a.out | grep ': /tools'
+peif
+rm -v dummy.c a.out
+#Done testing toolchain
+
+cs
+\rm -Rf glibc-2.26
+peif
+echo -e '(5.7) Done Building Glibc\n'
+
+
+#5.8 Libstdc++
+echo -e '\n(5.8) Building Libstdc++'
+tar -xf gcc-7.2.0.tar.xz
+peif
+cd gcc-7.2.0
+peif
+
+mkdir -v build
+peif
+cd build
+peif
+
+../libstdc++-v3/configure           \
+    --host=$LFS_TGT                 \
+    --prefix=/tools                 \
+    --disable-multilib              \
+    --disable-nls                   \
+    --disable-libstdcxx-threads     \
+    --disable-libstdcxx-pch         \
+    --with-gxx-include-dir=/tools/$LFS_TGT/include/c++/7.2.0 > /dev/null
+peif
+
+make -j$MAKEJFLAG > /dev/null
+peif
+make install > /dev/null
+peif
+
+cs
+\rm -Rf gcc-7.2.0
+peif
+echo -e '(5.8) Done building Libstdc++\n'
+
+
+#5.9 Binutils Pass 2
+echo -e '\n(5.9) Building Binutils Pass 2'
+tar -xf binutils-2.29.tar.bz2
+peif
+cd binutils-2.29
+peif
+
+mkdir -v build
+peif
+cd build
+peif
+
+CC=$LFS_TGT-gcc                \
+AR=$LFS_TGT-ar                 \
+RANLIB=$LFS_TGT-ranlib         \
+../configure                   \
+  --prefix=/tools            \
+  --disable-nls              \
+  --disable-werror           \
+  --with-lib-path=/tools/lib \
+  --with-sysroot > /dev/null
+peif
+
+make -j$MAKEJFLAG > /dev/null
+peif
+make install > /dev/null
+peif
+
+make -C ld clean > /dev/null
+peif
+make -C ld LIB_PATH=/usr/lib:/lib > /dev/null
+peif
+cp ld/ld-new /tools/bin
+peif
+
+cs
+\rm -Rf binutils-2.29
+peif
+echo -e '(5.9) Done Building Binutils Pass 2\n'
+
+
+#5.10 GCC Pass 2
+echo -e '\n(5.10) Building GCC Pass 2'
+tar -xf gcc-7.2.0.tar.xz
+peif
+cd gcc-7.2.0
+peif
+
+cat gcc/limitx.h gcc/glimits.h gcc/limity.h > \
+    `dirname $($LFS_TGT-gcc -print-libgcc-file-name)`/include-fixed/limits.h
+peif
+
+for file in gcc/config/{linux,i386/linux{,64}}.h
+do
+    cp -u $file{,.orig}
+    sed -e 's@/lib\(64\)\?\(32\)\?/ld@/tools&@g' \
+	-e 's@/usr@/tools@g' $file.orig > $file
+      echo '
+#undef STANDARD_STARTFILE_PREFIX_1
+#undef STANDARD_STARTFILE_PREFIX_2
+#define STANDARD_STARTFILE_PREFIX_1 "/tools/lib/"
+#define STANDARD_STARTFILE_PREFIX_2 ""' >> $file
+      touch $file.orig
+done
+
+case $(uname -m) in
+    x86_64)
+	sed -e '/m64=/s/lib64/lib/' \
+	    -i.orig gcc/config/i386/t-linux64
+	;;
+esac
+
+tar -xf ../mpfr-3.1.5.tar.xz
+peif
+mv -v mpfr-3.1.5 mpfr
+peif
+tar -xf ../gmp-6.1.2.tar.xz
+peif
+mv -v gmp-6.1.2 gmp
+peif
+tar -xf ../mpc-1.0.3.tar.gz
+peif
+mv -v mpc-1.0.3 mpc
+peif
+
+mkdir build
+peif
+cd build
+peif
+
+CC=$LFS_TGT-gcc                                    \
+CXX=$LFS_TGT-g++                                   \
+AR=$LFS_TGT-ar                                     \
+RANLIB=$LFS_TGT-ranlib                             \
+../configure                                       \
+  --prefix=/tools                                \
+  --with-local-prefix=/tools                     \
+  --with-native-system-header-dir=/tools/include \
+  --enable-languages=c,c++                       \
+  --disable-libstdcxx-pch                        \
+  --disable-multilib                             \
+  --disable-bootstrap                            \
+  --disable-libgomp > /dev/null
+peif
+
+make -j$MAKEJFLAG > /dev/null
+peif
+make install > /dev/null
+peif
+
+ln -sv gcc /tools/bin/cc
+peif
+
+#Test toolchain again
+echo 'int main(){}' > dummy.c
+cc dummy.c
+readelf -l a.out | grep ': /tools'
+peif
+rm dummy.c a.out
+#Done testing toolchain
+
+cs
+\rm -Rf gcc-7.2.0
+peif
+echo -e '(5.10) Done Building GCC Pass 2\n'
+
+
+#5.11 Tcl-core
+echo -e '\n(5.11) Building Tcl-core'
+tar -xf tcl-core8.6.7-src.tar.gz
+peif
+cd tcl8.6.7
+peif
+
+cd unix
+peif
+./configure --prefix=/tools > /dev/null
+peif
+
+make -j$MAKEJFLAG > /dev/null
+peif
+make install > /dev/null
+peif
+
+chmod -v u+w /tools/lib/libtcl8.6.so
+peif
+make install-private-headers > /dev/null
+peif
+ln -sv tclsh8.6 /tools/bin/tclsh
+peif
+
+cs
+\rm -Rf tcl8.6.7
+peif
+echo -e '(5.11) Done Building Tcl-core\n'
+
+
+#5.12 Expect
+echo -e '\n(5.12) Building Expect'
+tar -xf expect5.45.tar.gz
+peif
+cd expect5.45
+peif
+
+cp configure{,.orig}
+peif
+sed 's:/usr/local/bin:/bin:' configure.orig > configure
+peif
+
+./configure --prefix=/tools       \
+	    --with-tcl=/tools/lib \
+	    --with-tclinclude=/tools/include > /dev/null
+peif
+
+make -j$MAKEJFLAG > /dev/null
+peif
+make SCRIPTS="" install > /dev/null
+peif
+
+cs
+\rm -Rf expect5.45
+peif
+echo -e '(5.12) Done building Expect\n'
+
+
+#5.13 DejaGNU
+echo -e '\n(5.13) Building DejaGNU'
+tar -xf dejagnu-1.6.tar.gz
+peif
+cd dejagnu-1.6
+peif
+
+./configure --prefix=/tools > /dev/null
+peif
+make install > /dev/null
+peif
+
+cs
+\rm -Rf dejagnu-1.6
+peif
+echo -e '(5.13) Done Building DejaGNU\n'
+
+
+#5.14 Check
+echo -e '\n(5.14) Building Check'
+tar -xf check-0.11.0.tar.gz
+cd check-0.11.0
+peif
+
+PKG_CONFIG= ./configure --prefix=/tools > /dev/null
+peif
+make -j$MAKEJFLAG > /dev/null
+peif
+make install > /dev/null
+peif
+
+cs
+\rm -Rf check-0.11.0
+peif
+echo -e '(5.14) Done Building Check\n'
+
+
+#5.15 Ncurses
+echo -e '\n(5.15) Building Ncurses'
+tar -xf ncurses-6.0.tar.gz
+peif
+cd ncurses-6.0
+peif
+
+sed -i s/mawk// configure
+peif
+
+./configure --prefix=/tools \
+	    --with-shared   \
+	    --without-debug \
+	    --without-ada   \
+	    --enable-widec  \
+	    --enable-overwrite > /dev/null
+peif
+
+make -j$MAKEJFLAG > /dev/null
+peif
+make install > /dev/null
+peif
+
+cs
+\rm -Rf ncurses-6.0
+peif
+echo -e '(5.15) Done Building Ncurses\n'
+
+
+#5.16 Bash
+echo -e '\n(5.16) Building BASH'
+tar -xf bash-4.4.tar.gz
+peif
+cd bash-4.4
+peif
+
+./configure --prefix=/tools --without-bash-malloc > /dev/null
+peif
+make -j$MAKEJFLAG > /dev/null
+peif
+make install > /dev/null
+peif
+ln -sv bash /tools/bin/sh
+peif
+
+cs
+\rm -Rf bash-4.4
+peif
+echo -e '(5.16) Done Building BASH\n'
+
+
+#5.17 Bison
+echo -e '\n(5.17) Building Bison'
+tar -xf bison-3.0.4.tar.xz
+peif
+cd bison-3.0.4
+peif
+
+./configure --prefix=/tools > /dev/null
+peif
+make -j$MAKEJFLAG > /dev/null
+peif
+make install > /dev/null
+peif
+
+cs
+\rm -Rf bison-3.0.4
+peif
+echo -e '(5.17) Done Building Bison\n'
+
+
+#5.18 Bzip2
+echo -e '\n(5.18) Buidling bzip2'
+tar -xf bzip2-1.0.6.tar.gz
+peif
+cd bzip2-1.0.6
+peif
+
+make -j$MAKEJFLAG > /dev/null
+peif
+make PREFIX=/tools install > /dev/null
+peif
+
+cs
+\rm -Rf bzip2-1.0.6
+peif
+echo -e '(5.18) Done Building bzip2\n'
+
+
+#5.19 Coreutils
+echo -e '\n(5.19) Building Coreutils'
+tar -xf coreutils-8.27.tar.xz
+peif
+cd coreutils-8.27
+peif
+
+./configure --prefix=/tools --enable-install-program=hostname > /dev/null
+peif
+make -j$MAKEJFLAG > /dev/null
+peif
+make install > /dev/null
+peif
+
+cs
+\rm -Rf coreuitls-8.27
+peif
+echo -e '(5.19) Done Building coreutils\n'
+
+
+#5.20 Diffutils
+echo -e '\n(5.20) Building diffutils'
+tar -xf diffutils-3.6.tar.xz
+peif
+cd diffutils-3.6
+peif
+
+./configure --prefix=/tools > /dev/null
+peif
+make -j$MAKEJFLAG > /dev/null
+peif
+make install > /dev/null
+peif
+
+cs
+\rm -Rf diffutils-3.6
+echo -e '(5.20) Done Building diffutils\n'
+
+
+#5.21 File
+echo -e '\n(5.21) Building file'
+tar -xf file-5.31.tar.gz
+peif
+cd file-5.31
+peif
+
+./configure --prefix=/tools > /dev/null
+peif
+make -j$MAKEJFLAG > /dev/null
+peif
+make install > /dev/null
+peif
+
+cs
+\rm -Rf file-5.31
+peif
+echo -e '(5.21) Done Building File\n'
+
+
+#5.22 Findutils
+echo -e '\n(5.22) Building Findutils'
+tar -xf findutils-4.6.0.tar.gz
+peif
+cd findutils-4.6.0
+peif
+
+./configure --prefix=/tools > /dev/null
+peif
+make -j$MAKEJFLAG > /dev/null
+peif
+make install > /dev/null
+peif
+
+cs
+\rm -Rf findutils-4.6.0
+peif
+echo -e '(5.22) Done Building findutils\n'
+
+
+#5.23 Gawk
+echo -e '\n(5.23) Buidling Gawk'
+tar -xf gawk-4.1.4.tar.xz
+peif
+cd gawk-4.1.4
+peif
+
+./configure --prefix=/tools > /dev/null
+peif
+make -j$MAKEJFLAG > /dev/null
+peif
+make install > /dev/null
+peif
+
+cs
+\rm -Rf gawk-4.1.4
+peif
+echo -e '(5.23) Done Building Gawk\n'
+
+
+#5.24 Gettext
+echo -e '\n(5.24) Building Gettext'
+tar -xf gettext-0.19.8.1.tar.xz
+peif
+cd gettext-0.19.8.1
+peif
+
+cd gettext-tools
+peif
+EMACS="no" ./configure --prefix=/tools --disable-shared > /dev/null
+peif
+make -C gnulib-lib > /dev/null
+peif
+make -C intl pluralx.c > /dev/null
+peif
+make -C src msgfmt > /dev/null
+peif
+make -C src msgmerge > /dev/null
+peif
+make -C src xgettext > /dev/null
+peif
+cp src/{msgfmt,msgmerge,xgettext} /tools/bin
+peif
+
+cs
+\rm -Rf gettext-0.19.8.1
+peif
+echo -e '(5.24) Done Building Gettext\n'
+
+
+#5.25 Grep
+echo -e '\n(5.25) Building Grep'
+tar -xf grep-3.1.tar.xz
+peif
+cd grep-3.1
+peif
+
+./configure --prefix=/tools > /dev/null
+peif
+make -j$MAKEJFLAG > /dev/null
+peif
+make install > /dev/null
+peif
+
+cs
+\rm -Rf grep-3.1
+peif
+echo -e '(5.25) Done Building Grep\n'
+
+
+#5.26 Gzip
+echo -e '\n(5.26) Building Gzip'
+tar -xf gzip-1.8.tar.xz
+peif
+cd gzip-1.8
+peif
+
+./configure --prefix=/tools > /dev/null
+peif
+make -j$MAKEJFLAG > /dev/null
+peif
+make install > /dev/null
+peif
+
+cs
+\rm -Rf gzip-1.8
+peif
+echo -e '(5.26) Done Building Gzip\n'
+
+
+#5.27 m4
+echo -e '\n(5.27) Building m4'
+tar -xf m4-1.4.18.tar.xz
+peif
+cd m4-1.4.18
+peif
+
+./configure --prefix=/tools > /dev/null
+peif
+make -j$MAKEJFLAG > /dev/null
+peif
+make install > /dev/null
+peif
+
+cs
+\rm -Rf m4-1.4.18
+peif
+echo -e '(5.27) Done Building m4\n'
+
+
+#5.28 make
+echo -e '\n(5.28) Building Make'
+tar -xf make-4.2.1.tar.bz2
+peif
+cd make-4.2.1
+peif
+
+./configure --prefix=/tools --without-guile > /dev/null
+peif
+make -j$MAKEJFLAG > /dev/null
+peif
+make install > /dev/null
+peif
+
+cs
+\rm -Rf make-4.2.1
+peif
+echo -e '(5.28) Done Building Make\n'
+
+
+#5.29 patch
+echo -e '\n(5.29) Building Patch'
+tar -xf patch-2.7.5.tar.xz
+peif
+cd patch-2.7.5
+peif
+
+./configure --prefix=/tools > /dev/null
+peif
+make -j$MAKEJFLAG > /dev/null
+peif
+make install > /dev/null
+peif
+
+cs
+\rm -Rf patch-2.7.5
+peif
+echo -e '(5.29) Done Building Patch\n'
+
+
+#5.30 perl
+echo -e '\n(5.30) Building Perl'
+tar -xf perl-5.26.0.tar.xz
+peif
+cd perl-5.26.0
+peif
+
+sed -e '9751 a#ifndef PERL_IN_XSUB_RE' \
+   -e '9808 a#endif'                  \
+   -i regexec.c
+peif
+
+sh Configure -des -Dprefix=/tools -Dlibs=-lm > /dev/null
+peif
+make -j$MAKEJFLAG > /dev/null
+peif
+cp perl cpan/podlators/scripts/pod2man /tools/bin
+peif
+mkdir -pv /tools/lib/perl5/5.26.0
+peif
+cp -R lib/* /tools/lib/perl5/5.26.0
+peif
+
+cs
+\rm -Rf perl-5.26.0
+peif
+echo -e '(5.30) Done Building Perl\n'
+
+
+#5.31 sed
+echo -e '\n(5.31) Building sed'
+tar -xf sed-4.4.tar.xz
+peif
+cd sed-4.4
+peif
+
+./configure --prefix=/tools > /dev/null
+peif
+make -j$MAKEJFLAG > /dev/null
+peif
+make install > /dev/null
+peif
+
+cs
+\rm -Rf sed-4.4
+peif
+echo -e '(5.31) Done Building Sed\n'
+
+
+#5.32 tar
+echo -e '\n(5.32) Building tar'
+tar -xf tar-1.29.tar.xz
+peif
+cd tar-1.29
+peif
+
+./configure --prefix=/tools > /dev/null
+peif
+make -j$MAKEJFLAG > /dev/null
+peif
+make install > /dev/null
+peif
+
+cs
+\rm -Rf tar-1.29
+peif
+echo -e '(5.32) Done Building tar\n'
+
+
+#5.33 texinfo
+echo -e '\n(5.33) Building texinfo'
+tar -xf texinfo-6.4.tar.xz
+peif
+cd texinfo-6.4
+peif
+
+./configure --prefix=/tools > /dev/null
+peif
+make -j$MAKEJFLAG > /dev/null
+peif
+make install > /dev/null
+peif
+
+cs
+peif
+\rm -Rf texinfo-6.4
+peif
+echo -e '(5.33) Done Building Texinfo\n'
+
+
+#5.34 Util-linux
+echo -e '\n(5.34) Building Util-linux'
+tar -xf util-linux-2.30.1.tar.xz
+peif
+cd util-linux-2.30.1
+peif
+
+./configure --prefix=/tools                \
+	    --without-python               \
+	    --disable-makeinstall-chown    \
+	    --without-systemdsystemunitdir \
+	    --without-ncurses              \
+	    PKG_CONFIG="" > /dev/null
+peif
+#This will swamp the system with processes
+#if -j is set to more than 1
+make -j1 > /dev/null
+peif
+make install > /dev/null
+peif
+
+cs
+\rm -Rf util-linux-2.30.1
+peif
+echo -e '(5.34) Done Building Util-linux\n'
+
+
+#5.35 xz
+echo -e '\n(5.35) Building xz'
+tar -xf xz-5.2.3.tar.xz
+peif
+cd xz-5.2.3
+peif
+
+./configure --prefix=/tools > /dev/null
+peif
+make -j$MAKEJFLAG > /dev/null
+peif
+make install > /dev/null
+peif
+
+cs
+\rm -Rf xz-5.2.3
+peif
+echo -e '(5.35) Done Buidling xz\n'
+
+
+echo -e '\n(5.36) Stripping Binaries'
+strip --strip-debug /tools/lib/*
+/usr/bin/strip --strip-unneeded /tools/{,s}bin/*
+rm -rf /tools/{,share}/{info,man,doc}
+
+
