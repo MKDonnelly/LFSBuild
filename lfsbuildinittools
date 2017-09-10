@@ -32,7 +32,7 @@ peif
 cd binutils-2.29
 peif
 
-mkdir -v build
+mkdir build
 peif
 cd build
 peif
@@ -49,7 +49,7 @@ make -j$MAKEJFLAG > /dev/null
 peif
 
 case $(uname -m) in
-    x86_64) mkdir -v /tools/lib && ln -sv lib /tools/lib64 ;;
+    x86_64) mkdir /tools/lib && ln -s lib /tools/lib64 ;;
 esac
 
 make install > /dev/null
@@ -70,15 +70,15 @@ peif
 
 tar -xf ../mpfr-3.1.5.tar.xz
 peif
-mv -v mpfr-3.1.5 mpfr
+mv mpfr-3.1.5 mpfr
 peif
 tar -xf ../gmp-6.1.2.tar.xz
 peif
-mv -v gmp-6.1.2 gmp
+mv gmp-6.1.2 gmp
 peif
 tar -xf ../mpc-1.0.3.tar.gz
 peif
-mv -v mpc-1.0.3 mpc
+mv mpc-1.0.3 mpc
 peif
 
 for file in gcc/config/{linux,i386/linux{,64}}.h
@@ -101,7 +101,7 @@ case $(uname -m) in
 	;;
 esac
 
-mkdir -v build
+mkdir build
 peif
 cd build
 peif
@@ -169,7 +169,7 @@ peif
 cd glibc-2.26
 peif
 
-mkdir -v build
+mkdir build
 peif
 cd build
 peif
@@ -195,7 +195,7 @@ echo 'int main(){}' > dummy.c
 $LFS_TGT-gcc dummy.c
 readelf -l a.out | grep ': /tools'
 peif
-rm -v dummy.c a.out
+rm dummy.c a.out
 #Done testing toolchain
 
 cs
@@ -211,7 +211,7 @@ peif
 cd gcc-7.2.0
 peif
 
-mkdir -v build
+mkdir build
 peif
 cd build
 peif
@@ -244,7 +244,7 @@ peif
 cd binutils-2.29
 peif
 
-mkdir -v build
+mkdir build
 peif
 cd build
 peif
@@ -311,15 +311,15 @@ esac
 
 tar -xf ../mpfr-3.1.5.tar.xz
 peif
-mv -v mpfr-3.1.5 mpfr
+mv mpfr-3.1.5 mpfr
 peif
 tar -xf ../gmp-6.1.2.tar.xz
 peif
-mv -v gmp-6.1.2 gmp
+mv gmp-6.1.2 gmp
 peif
 tar -xf ../mpc-1.0.3.tar.gz
 peif
-mv -v mpc-1.0.3 mpc
+mv mpc-1.0.3 mpc
 peif
 
 mkdir build
@@ -347,7 +347,7 @@ peif
 make install > /dev/null
 peif
 
-ln -sv gcc /tools/bin/cc
+ln -s gcc /tools/bin/cc
 peif
 
 #Test toolchain again
@@ -381,11 +381,11 @@ peif
 make install > /dev/null
 peif
 
-chmod -v u+w /tools/lib/libtcl8.6.so
+chmod u+w /tools/lib/libtcl8.6.so
 peif
 make install-private-headers > /dev/null
 peif
-ln -sv tclsh8.6 /tools/bin/tclsh
+ln -s tclsh8.6 /tools/bin/tclsh
 peif
 
 cs
@@ -501,7 +501,7 @@ make -j$MAKEJFLAG > /dev/null
 peif
 make install > /dev/null
 peif
-ln -sv bash /tools/bin/sh
+ln -s bash /tools/bin/sh
 peif
 
 cs
@@ -795,7 +795,7 @@ make -j$MAKEJFLAG > /dev/null
 peif
 cp perl cpan/podlators/scripts/pod2man /tools/bin
 peif
-mkdir -pv /tools/lib/perl5/5.26.0
+mkdir -p /tools/lib/perl5/5.26.0
 peif
 cp -R lib/* /tools/lib/perl5/5.26.0
 peif
