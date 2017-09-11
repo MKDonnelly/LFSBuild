@@ -212,8 +212,8 @@ PRETTY_NAME="Linux From Scratch Version 8.1-Systemd"
 VERSION_CODENAME=""' > $LFS/etc/os-release
 
 #Remove the scripts and source code used to build the system
-\rm $LFS/{lfsbuildinittools,lfsbuildsystem,lfstoolcheck}
-\rm -Rf $LFS/sources
+\rm $LFS/{lfsbuildinittools,lfsbuildsystem}
+\rm -Rf $LFS/sources $LFS/tools
 
 #Remove the lfs user and home directory
 userdel -f lfs
