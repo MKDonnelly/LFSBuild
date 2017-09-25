@@ -1,4 +1,0 @@
-- Integrate Stow package management into lfsbuildsystem
-- Get rid of lfsbuildinittools and use a one-stage system
-- Remove unused packages
-

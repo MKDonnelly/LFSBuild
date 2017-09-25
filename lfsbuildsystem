@@ -39,23 +39,23 @@ function peif(){
 
 #6.5 Creating directories
 echo -e '\n(6.5-6) Creating directory structure\n'
-mkdir -p /{boot,etc/{opt,sysconfig},home,mnt,var}
+mkdir -p /{boot,etc/,home,mnt,var}
 install -d -m 0750 /root
 install -d -m 1777 /tmp /var/tmp
 mkdir -p /usr/{,local/}{bin,include,lib,sbin,lib64}
-ln -s /usr/bin /bin
-ln -s /usr/sbin /sbin
-ln -s /usr/lib /lib
-ln -s /usr/lib64 /lib64
-mkdir -p /usr/{,local/}share/{color,dict,doc,info,locale,man}
-mkdir /usr/{,local/}share/{misc,terminfo,zoneinfo}
+ln -s usr/bin /bin
+ln -s usr/sbin /sbin
+ln -s usr/lib /lib
+ln -s usr/lib64 /lib64
+mkdir -p /usr/{,local/}share/{doc,info,locale,man}
+mkdir /usr/{,local/}share/{terminfo,zoneinfo}
 mkdir  /usr/libexec
 mkdir -p /usr/{,local/}share/man/man{1..8}
 
-mkdir /var/{log,mail,spool}
+mkdir /var/log
 ln -s /run /var/run
 ln -s /run/lock /var/lock
-mkdir -p /var/{opt,cache,lib/{color,misc,locate},local}
+mkdir -p /var/{cache,lib/locate,local}
 
 ln -s /tools/bin/{bash,cat,dd,echo,ln,pwd,rm,stty} /bin
 ln -s /tools/bin/{install,perl} /usr/bin
@@ -128,9 +128,7 @@ chmod 600  /var/log/btmp
 #6.7 Linux API Headers
 echo -e '\n(6.7) Building Linux API Headers'
 tar -xf linux-4.12.7.tar.xz
-peif
 cd linux-4.12.7
-peif
 
 make mrproper > /dev/null
 peif
@@ -150,7 +148,6 @@ echo -e '(6.7) Done Building Linux API Headers\n'
 #6.8 Man-pages
 echo -e '\n(6.8) Building Man-pages'
 tar -xf man-pages-4.12.tar.xz
-peif
 cd man-pages-4.12
 
 make install > /dev/null
@@ -164,9 +161,7 @@ echo -e '(6.8) Done Building Man-pages\n'
 #6.9 Glibc
 echo -e '\n(6.9) Building Glibc'
 tar -xf glibc-2.26.tar.xz
-peif
 cd glibc-2.26
-peif
 
 patch -Np1 -i ../glibc-2.26-fhs-1.patch
 peif
@@ -330,9 +325,7 @@ echo -e '(6.10) Done adjusting the toolchain\n'
 #6.11 Zlib
 echo -e '\n(6.11) Building zlib'
 tar -xf zlib-1.2.11.tar.xz
-peif
 cd zlib-1.2.11
-peif
 
 ./configure --prefix=/usr > /dev/null
 peif
@@ -342,8 +335,6 @@ rit make check 2> $cl/6.11zlib > /dev/null
 make install > /dev/null
 peif
 
-#mv -v /usr/lib/libz.so.* /lib
-peif
 ln -sf ../../lib/$(readlink /usr/lib/libz.so) /usr/lib/libz.so
 peif
 
@@ -356,9 +347,7 @@ echo -e '(6.11) Done Building Zlib\n'
 #6.12 File
 echo -e '\n(6.12) Building File'
 tar -xf file-5.31.tar.gz
-peif
 cd file-5.31
-peif
 
 ./configure --prefix=/usr > /dev/null
 peif
@@ -376,9 +365,7 @@ echo -e '(6.12) Done Building File\n'
 #6.13 Readline
 echo -e '\n(6.13) Building Readline'
 tar -xf readline-7.0.tar.gz
-peif
 cd readline-7.0
-peif
 
 sed -i '/MV.*old/d' Makefile.in
 peif
@@ -394,8 +381,6 @@ peif
 make SHLIB_LIBS="-L/tools/lib -lncurses" install > /dev/null
 peif
 
-#mv -v /usr/lib/lib{readline,history}.so.* /lib
-peif
 ln -sf ../../lib/$(readlink /usr/lib/libreadline.so) /usr/lib/libreadline.so
 peif
 ln -sf ../../lib/$(readlink /usr/lib/libhistory.so ) /usr/lib/libhistory.so
@@ -409,9 +394,7 @@ echo -e '(6.13) Done Building Readline'
 #6.14 m4
 echo -e '\n(6.14) Building m4'
 tar -xf m4-1.4.18.tar.xz
-peif
 cd m4-1.4.18
-peif
 
 ./configure --prefix=/usr > /dev/null
 peif
@@ -428,9 +411,7 @@ echo -e '(6.14) Done Building m4\n'
 #6.15 bc
 echo -e '(6.15) Building bc'
 tar -xf bc-1.07.1.tar.gz
-peif
 cd bc-1.07.1
-peif
 
 cat > bc/fix-libmath_h <<"EOF"
 #! /bin/bash
@@ -471,9 +452,7 @@ echo -e '(6.15) Done Building bc'
 #6.16 Binutils
 echo -e '\n(6.16) Building Binutils'
 tar -xf binutils-2.29.tar.bz2
-peif
 cd binutils-2.29
-peif
 
 expect -c "spawn ls" | grep spawn
 peif
@@ -504,11 +483,9 @@ echo -e '(6.16) Done Building Binutils\n'
 #6.17 gmp
 echo -e '\n(6.17) Building GMP'
 tar -xf gmp-6.1.2.tar.xz
-peif
 cd gmp-6.1.2
-peif
 
-./configure --prefix=/usr    \
+./configure --prefix=/usr   \
 	   --enable-cxx     \
 	   --disable-static \
 	   --docdir=/usr/share/doc/gmp-6.1.2 > /dev/null
@@ -528,9 +505,7 @@ echo -e '(6.18) Done Building GMP'
 #6.18 MPFR
 echo -e '\n(6.18) Building MPFR'
 tar -xf mpfr-3.1.5.tar.xz
-peif
 cd mpfr-3.1.5
-peif
 
 ./configure --prefix=/usr        \
 	    --disable-static     \
@@ -551,9 +526,7 @@ echo -e '(6.18) Done Building MPFR\n'
 #6.19 MPC
 echo -e '\n(6.19) Building MPC'
 tar -xf mpc-1.0.3.tar.gz
-peif
 cd mpc-1.0.3
-peif
 
 ./configure --prefix=/usr    \
 	    --disable-static \
@@ -574,9 +547,7 @@ echo -e '(6.19) Done Building MPC\n'
 #6.20 GCC
 echo -e '\n(6.20) Building GCC'
 tar -xf gcc-7.2.0.tar.xz
-peif
 cd gcc-7.2.0
-peif
 
 case $(uname -m) in
     x86_64)
@@ -633,9 +604,7 @@ echo -e '(6.20) Done Building GCC\n'
 #6.21 Bzip2
 echo -e '\n(6.21) Building Bzip2'
 tar -xf bzip2-1.0.6.tar.gz
-peif
 cd bzip2-1.0.6
-peif
 
 patch -Np1 -i ../bzip2-1.0.6-install_docs-1.patch
 peif
@@ -656,7 +625,7 @@ peif
 cp bzip2-shared /bin/bzip2
 cp -a libbz2.so* /lib
 ln -s ../../lib/libbz2.so.1.0 /usr/lib/libbz2.so
-rm /usr/bin/{bunzip2,bzcat,bzip2}
+rm /usr/bin/{bunzip2,bzcat}
 ln -s bzip2 /bin/bunzip2
 ln -s bzip2 /bin/bzcat
 
@@ -669,9 +638,7 @@ echo -e '(6.21) Done Building Bzip2\n'
 #6.22 Pkg-config
 echo -e '\n(6.22) Building Pkg-config'
 tar -xf pkg-config-0.29.2.tar.gz
-peif
 cd pkg-config-0.29.2
-peif
 
 ./configure --prefix=/usr              \
 	    --with-internal-glib       \
@@ -693,9 +660,7 @@ echo -e '(6.22) Done Building pkg-config\n'
 #6.23 Ncurses
 echo -e '\n(6.23) Building Ncurses'
 tar -xf ncurses-6.0.tar.gz
-peif
 cd ncurses-6.0
-peif
 
 sed -i '/LIBTOOL_INSTALL/d' c++/Makefile.in
 peif
@@ -713,7 +678,6 @@ peif
 make install > /dev/null
 peif
 
-#mv -v /usr/lib/libncursesw.so.6* /lib
 ln -sf ../../lib/$(readlink /usr/lib/libncursesw.so) /usr/lib/libncursesw.so
 for lib in ncurses form panel menu ; do
     rm -f                    /usr/lib/lib${lib}.so
@@ -733,9 +697,7 @@ echo -e '(6.24) Done Building Ncurses\n'
 #6.24 Attr
 echo -e '\n(6.24) Building Attr'
 tar -xf attr-2.4.47.src.tar.gz
-peif
 cd attr-2.4.47
-peif
 
 sed -i -e 's|/@pkg_name@|&-@pkg_version@|' include/builddefs.in
 peif
@@ -754,8 +716,6 @@ make install install-dev install-lib > /dev/null
 peif
 chmod 755 /usr/lib/libattr.so
 peif
-
-#mv -v /usr/lib/libattr.so.* /lib
 ln -sf ../../lib/$(readlink /usr/lib/libattr.so) /usr/lib/libattr.so
 
 cs
@@ -767,9 +727,7 @@ echo -e '(6.24) Done Building Attr\n'
 #6.25 Acl
 echo -e '\n(6.25) Building Acl'
 tar -xf acl-2.2.52.src.tar.gz
-peif
 cd acl-2.2.52
-peif
 
 sed -i -e 's|/@pkg_name@|&-@pkg_version@|' include/builddefs.in
 sed -i "s:| sed.*::g" test/{sbits-restore,cp,misc}.test
@@ -787,7 +745,6 @@ make install install-dev install-lib > /dev/null
 peif
 chmod 755 /usr/lib/libacl.so
 peif
-#mv -v /usr/lib/libacl.so.* /lib
 ln -sf ../../lib/$(readlink /usr/lib/libacl.so) /usr/lib/libacl.so
 
 cs
@@ -799,9 +756,7 @@ echo -e '(6.25) Done Building ACL\n'
 #6.26 Libcap
 echo -e '\n(6.26) Building Libcap'
 tar -xf libcap-2.25.tar.xz
-peif
 cd libcap-2.25
-peif
 
 sed -i '/install.*STALIBNAME/d' libcap/Makefile
 peif
@@ -811,9 +766,6 @@ peif
 make RAISE_SETFCAP=no lib=lib prefix=/usr install > /dev/null
 peif
 chmod 755 /usr/lib/libcap.so
-peif
-
-#mv -v /usr/lib/libcap.so.* /lib
 peif
 ln -sf ../../lib/$(readlink /usr/lib/libcap.so) /usr/lib/libcap.so
 peif
@@ -827,9 +779,7 @@ echo -e '(6.26) Done Building Libcap\n'
 #6.27 Sed
 echo -e '\n(6.27) Building Sed'
 tar -xf sed-4.4.tar.xz
-peif
 cd sed-4.4
-peif
 
 sed -i 's/usr/tools/'                 build-aux/help2man
 sed -i 's/testsuite.panic-tests.sh//' Makefile.in
@@ -850,9 +800,7 @@ echo -e '(6.27) Done Building Sed\n'
 #6.28 Shadow
 echo -e '\n(6.28) Building Shadow'
 tar -xf shadow-4.5.tar.xz
-peif
 cd shadow-4.5
-peif
 
 sed -i 's/groups$(EXEEXT) //' src/Makefile.in
 find man -name Makefile.in -exec sed -i 's/groups\.1 / /'   {} \;
@@ -868,7 +816,6 @@ make -j$MAKEJFLAG > /dev/null
 peif
 make install > /dev/null
 peif
-#mv -v /usr/bin/passwd /bin
 
 pwconv
 grpconv
@@ -882,9 +829,7 @@ echo -e '(6.28) Done building Shadow\n'
 #6.29 psmisc
 echo -e '\n(6.29) Building psmisc'
 tar -xf psmisc-23.1.tar.xz
-peif
 cd psmisc-23.1
-peif
 
 ./configure --prefix=/usr > /dev/null
 peif
@@ -892,8 +837,6 @@ make -j$MAKEJFLAG > /dev/null
 peif
 make install > /dev/null
 peif
-#mv -v /usr/bin/fuser   /bin
-#mv -v /usr/bin/killall /bin
 
 cs
 \rm -Rf psmisc-23.1
@@ -904,9 +847,7 @@ echo -e '(6.29) Done Building psmisc\n'
 #6.30 iana-etc
 echo -e '\n(6.30) Building iana-etc'
 tar -xf iana-etc-2.30.tar.bz2
-peif
 cd iana-etc-2.30
-peif
 
 make -j$MAKEJFLAG > /dev/null
 peif
@@ -922,9 +863,7 @@ echo -e '(6.30) Done building iana-etc\n'
 #6.31 Bison
 echo -e '\n(6.31) Building Bison'
 tar -xf bison-3.0.4.tar.xz
-peif
 cd bison-3.0.4
-peif
 
 ./configure --prefix=/usr --docdir=/usr/share/doc/bison-3.0.4 > /dev/null
 peif
@@ -942,9 +881,7 @@ echo -e '(6.31) Done Building Bison\n'
 #6.32 Flex
 echo -e '\n(6.32) Building Flex'
 tar -xf flex-2.6.4.tar.gz
-peif
 cd flex-2.6.4
-peif
 
 sed -i "/math.h/a #include <malloc.h>" src/flexdef.h
 peif
@@ -967,9 +904,7 @@ echo -e '(6.32) Done Building Flex\n'
 #6.33 Grep
 echo -e '\n(6.33) Building Grep'
 tar -xf grep-3.1.tar.xz
-peif
 cd grep-3.1
-peif
 
 ./configure --prefix=/usr --bindir=/bin > /dev/null
 peif
@@ -988,9 +923,7 @@ echo -e '(6.33) Done building Grep\n'
 #6.34 Bash
 echo -e '\n(6.34) Building BASH'
 tar -xf bash-4.4.tar.gz
-peif
 cd bash-4.4
-peif
 
 patch -Np1 -i ../bash-4.4-upstream_fixes-1.patch
 peif
@@ -1005,7 +938,6 @@ chown -R nobody .
 rit su nobody -s /bin/bash -c "PATH=$PATH make tests" 2> $cl/6.24bash > /dev/null
 make install > /dev/null
 peif
-#mv -vf /usr/bin/bash /bin
 
 cs
 \rm -Rf bash-4.4
@@ -1016,9 +948,7 @@ echo -e '(6.34) Done Building Bash\n'
 #6.35 Libtool
 echo -e '\n(6.35) Building Libtool'
 tar -xf libtool-2.4.6.tar.xz
-peif
 cd libtool-2.4.6
-peif
 
 ./configure --prefix=/usr > /dev/null
 peif
@@ -1037,9 +967,7 @@ echo -e '(6.35) Done Building Libtool\n'
 #6.36 GDBM
 echo -e '\n(6.36) Building GDBM'
 tar -xf gdbm-1.13.tar.gz
-peif
 cd gdbm-1.13
-peif
 
 ./configure --prefix=/usr \
 	    --disable-static \
@@ -1060,9 +988,7 @@ echo -e '(6.36) Done Building GDBM\n'
 #6.37 Gperf
 echo -e '\n(6.37) Building Gperf'
 tar -xf gperf-3.1.tar.gz
-peif
 cd gperf-3.1
-peif
 
 ./configure --prefix=/usr --docdir=/usr/share/doc/gperf-3.1 > /dev/null
 peif
@@ -1081,9 +1007,7 @@ echo -e '(6.37) Done Building Gperf\n'
 #6.38 Expat
 echo -e '\n(6.38) Building Expat'
 tar -xf expat-2.2.3.tar.bz2
-peif
 cd expat-2.2.3
-peif
 
 sed -i 's|usr/bin/env |bin/|' run.sh.in
 ./configure --prefix=/usr --disable-static > /dev/null
@@ -1103,9 +1027,7 @@ echo -e '(6.38) Done Building Expat\n'
 #6.39 Inetutils
 echo -e '\n(6.39) Building Inetutils'
 tar -xf inetutils-1.9.4.tar.xz
-peif
 cd inetutils-1.9.4
-peif
 
 ./configure --prefix=/usr        \
 	    --localstatedir=/var \
@@ -1122,8 +1044,6 @@ peif
 rit make check 2> $cl/6.39inetutils > /dev/null
 make install > /dev/null
 peif
-#mv -v /usr/bin/{hostname,ping,ping6,traceroute} /bin
-#mv -v /usr/bin/ifconfig /sbin
 mv /usr/bin/ifconfig /usr/sbin/
 
 cs
@@ -1135,9 +1055,7 @@ echo -e '(6.39) Done Building inetutils\n'
 #6.40 Perl
 echo -e '\n(6.40) Building Perl'
 tar -xf perl-5.26.0.tar.xz
-peif
 cd perl-5.26.0
-peif
 
 echo "127.0.0.1 localhost $(hostname)" > /etc/hosts
 export BUILD_ZLIB=False
@@ -1167,9 +1085,7 @@ echo -e '(6.40) Done Building Perl\n'
 #6.41 XML::Parser
 echo -e '\n(6.41) Building XML::Parser'
 tar -xf XML-Parser-2.44.tar.gz
-peif
 cd XML-Parser-2.44
-peif
 
 perl Makefile.PL > /dev/null
 peif
@@ -1188,9 +1104,7 @@ echo -e '(6.41) Done Building XML::Parser\n'
 #6.42 intltool
 echo -e '\n(6.42) Building Intltool'
 tar -xf intltool-0.51.0.tar.gz
-peif
 cd intltool-0.51.0
-peif
 
 sed -i 's:\\\${:\\\$\\{:' intltool-update.in
 ./configure --prefix=/usr > /dev/null
@@ -1211,9 +1125,7 @@ echo -e '(6.42) Done Building intltool\n'
 #6.43 Autoconf
 echo -e '\n(6.43) Building Autoconf'
 tar -xf autoconf-2.69.tar.xz
-peif
 cd autoconf-2.69
-peif
 
 ./configure --prefix=/usr > /dev/null
 peif
@@ -1232,9 +1144,7 @@ echo -e '(6.43) Done Building Autoconf'
 #6.44 Automake
 echo -e '\n(6.44) Building Automake'
 tar -xf automake-1.15.1.tar.xz
-peif
 cd automake-1.15.1
-peif
 
 ./configure --prefix=/usr --docdir=/usr/share/doc/automake-1.15.1 > /dev/null
 peif
@@ -1254,9 +1164,7 @@ echo -e '(6.44) Done Building Automake\n'
 #6.45 XZ
 echo -e '\n(6.45) Building Xz'
 tar -xf xz-5.2.3.tar.xz
-peif
 cd xz-5.2.3
-peif
 
 ./configure --prefix=/usr    \
 	    --disable-static \
@@ -1267,8 +1175,6 @@ peif
 rit make check 2> $cl/6.45xz > /dev/null
 make install > /dev/null
 peif
-#mv /usr/bin/{lzma,unlzma,lzcat,xz,unxz,xzcat} /bin
-#mv /usr/lib/liblzma.so.* /lib
 ln -sf ../../lib/$(readlink /usr/lib/liblzma.so) /usr/lib/liblzma.so
 
 cs
@@ -1280,9 +1186,7 @@ echo -e '(6.45) Done Building Xz\n'
 #6.46 Kmod
 echo -e '\n(6.46) Building Kmod'
 tar -xf kmod-24.tar.xz
-peif
 cd kmod-24
-peif
 
 ./configure --prefix=/usr          \
 	    --bindir=/bin          \
@@ -1309,9 +1213,7 @@ echo -e '(6.46) Done Building Kmod\n'
 #6.47 Building Gettext
 echo -e '\n(6.47) Building Gettext'
 tar -xf gettext-0.19.8.1.tar.xz
-peif
 cd gettext-0.19.8.1
-peif
 
 sed -i '/^TESTS =/d' gettext-runtime/tests/Makefile.in &&
 sed -i 's/test-lock..EXEEXT.//' gettext-tools/gnulib-tests/Makefile.in
@@ -1336,9 +1238,7 @@ echo -e '(6.47) Done Building Gettext\n'
 #6.48 Systemd
 echo -e '\n(6.48) Building systemd'
 tar -xf systemd-234-lfs.tar.xz
-peif
 cd systemd-234-lfs
-peif
 
 cat > config.cache <<"EOF"
 KILL=/bin/kill
@@ -1390,9 +1290,7 @@ echo -e '(6.48) Done Building Systemd\n'
 #6.49 Procps-ng
 echo -e '\n(6.49) Building Procps-ng'
 tar -xf procps-ng-3.3.12.tar.xz
-peif
 cd procps-ng-3.3.12
-peif
 
 ./configure --prefix=/usr                            \
 	    --exec-prefix=                           \
@@ -1409,9 +1307,8 @@ rm testsuite/pgrep.test/pgrep.exp
 rit make check 2> $cl/6.49procpsng > /dev/null
 make install > /dev/null
 peif
-
-#mv -v /usr/lib/libprocps.so.* /lib
 ln -sf ../../lib/$(readlink /usr/lib/libprocps.so) /usr/lib/libprocps.so
+peif
 
 cs
 \rm -Rf procps-ng-3.3.12
@@ -1422,9 +1319,7 @@ echo -e '(6.49) Done Building procps-ng\n'
 #6.50 e2fsprogs
 echo -e '\n(6.50) Building e2fsprogs'
 tar -xf e2fsprogs-1.43.5.tar.gz
-peif
 cd e2fsprogs-1.43.5
-peif
 
 mkdir build
 cd build
@@ -1463,9 +1358,7 @@ echo -e '(6.50) Done Building e2fsprogs\n'
 #6.51 coreutils
 echo -e '\n(6.51) Buidling Coreutils'
 tar -xf coreutils-8.27.tar.xz
-peif
 cd coreutils-8.27
-peif
 
 patch -Np1 -i ../coreutils-8.27-i18n-1.patch
 peif
@@ -1486,13 +1379,10 @@ sed -i '/dummy/d' /etc/group
 make install > /dev/null
 peif
 
-#mv -v /usr/bin/{cat,chgrp,chmod,chown,cp,date,dd,df,echo} /bin
-#mv -v /usr/bin/{false,ln,ls,mkdir,mknod,mv,pwd,rm} /bin
-#mv -v /usr/bin/{rmdir,stty,sync,true,uname} /bin
+mkdir /usr/share/man/man8/
 mv /usr/bin/chroot /usr/sbin
 mv /usr/share/man/man1/chroot.1 /usr/share/man/man8/chroot.8
 sed -i s/\"1\"/\"8\"/1 /usr/share/man/man8/chroot.8
-#mv -v /usr/bin/{head,sleep,nice,test,\[} /bin
 
 cs
 \rm -Rf coreutils-8.27
@@ -1503,9 +1393,7 @@ echo -e '(6.51) Done Building Coreutils\n'
 #6.52 Diffutils
 echo -e '\n(6.52) Building Diffutils'
 tar -xf diffutils-3.6.tar.xz
-peif
 cd diffutils-3.6
-peif
 
 ./configure --prefix=/usr > /dev/null
 peif
@@ -1524,9 +1412,7 @@ echo -e '(6.52) Done Building Diffutils\n'
 #6.53 Gawk
 echo -e '\n(6.53) Building Gawk'
 tar -xf gawk-4.1.4.tar.xz
-peif
 cd gawk-4.1.4
-peif
 
 ./configure --prefix=/usr > /dev/null
 peif
@@ -1545,9 +1431,7 @@ echo -e '(6.53) Done Building Gawk\n'
 #6.54 Findutils
 echo -e '\n(6.54) Building Findutils'
 tar -xf findutils-4.6.0.tar.gz
-peif
 cd findutils-4.6.0
-peif
 
 sed -i 's/test-lock..EXEEXT.//' tests/Makefile.in
 ./configure --prefix=/usr --localstatedir=/var/lib/locate > /dev/null
@@ -1557,7 +1441,6 @@ peif
 rit make check 2> $cl/6.54findutils > /dev/null
 make install > /dev/null
 peif
-#mv -v /usr/bin/find /bin
 sed -i 's|find:=${BINDIR}|find:=/bin|' /usr/bin/updatedb
 
 cs
@@ -1569,9 +1452,7 @@ echo -e '(6.54) Done Building Findutils\n'
 #6.55 Groff
 echo -e '\n(6.55) Building Groff'
 tar -xf groff-1.22.3.tar.gz
-peif
 cd groff-1.22.3
-peif
 
 PAGE=letter ./configure --prefix=/usr > /dev/null
 peif
@@ -1589,9 +1470,7 @@ echo -e '(6.55) Done Building Groff\n'
 #6.56 Grub
 echo -e '\n(6.56) Building Grub'
 tar -xf grub-2.02.tar.xz
-peif
 cd grub-2.02
-peif
 
 ./configure --prefix=/usr          \
 	    --sbindir=/sbin        \
@@ -1613,9 +1492,7 @@ echo -e '(6.56) Done Building Grub\n'
 #6.57 Less
 echo -e '\n(6.57) Building Less'
 tar -xf less-487.tar.gz
-peif
 cd less-487
-peif
 
 ./configure --prefix=/usr --sysconfdir=/etc > /dev/null
 peif
@@ -1633,9 +1510,7 @@ echo -e '(6.57) Done Building Less\n'
 #6.58 Gzip
 echo -e '\n(6.58) Building Gzip'
 tar -xf gzip-1.8.tar.xz
-peif
 cd gzip-1.8
-peif
 
 ./configure --prefix=/usr > /dev/null
 peif
@@ -1644,7 +1519,6 @@ peif
 rit make check 2> $cl/6.58gzip > /dev/null
 make install > /dev/null
 peif
-#mv -v /usr/bin/gzip /bin
 
 cs
 \rm -Rf gzip-1.8
@@ -1655,9 +1529,7 @@ echo -e '(6.58) Done building gzip\n'
 #6.59 iproute2
 echo -e '\n(6.59) Building iproute2'
 tar -xf iproute2-4.12.0.tar.xz
-peif
 cd iproute2-4.12.0
-peif
 
 sed -i /ARPD/d Makefile
 sed -i 's/arpd.8//' man/man8/Makefile
@@ -1678,9 +1550,7 @@ echo -e '(6.59) Done Building Iproute2\n'
 #6.60 Kbd
 echo -e '\n(6.60) Building Kbd'
 tar -xf kbd-2.0.4.tar.xz
-peif
 cd kbd-2.0.4
-peif
 
 patch -Np1 -i ../kbd-2.0.4-backspace-1.patch
 peif
@@ -1703,9 +1573,7 @@ echo -e '(6.60) Done Building Kbd\n'
 #6.61 Libpipeline
 echo -e '\n(6.61) Building Libpipeline'
 tar -xf libpipeline-1.4.2.tar.gz
-peif
 cd libpipeline-1.4.2
-peif
 
 PKG_CONFIG_PATH=/tools/lib/pkgconfig ./configure --prefix=/usr > /dev/null
 peif
@@ -1724,9 +1592,7 @@ echo -e '(6.61) Done Building Libpipeline\n'
 #6.62 make
 echo -e '\n(6.62) Building Make'
 tar -xf make-4.2.1.tar.bz2
-peif
 cd make-4.2.1
-peif
 
 ./configure --prefix=/usr > /dev/null
 peif
@@ -1745,9 +1611,7 @@ echo -e '(6.62) Done Building Make\n'
 #6.63 patch
 echo -e '\n(6.63) Building Patch'
 tar -xf patch-2.7.5.tar.xz
-peif
 cd patch-2.7.5
-peif
 
 ./configure --prefix=/usr > /dev/null
 peif
@@ -1766,9 +1630,7 @@ echo -e '(6.63) Done Building Patch\n'
 #6.64 D-Bus
 echo -e '\n(6.64) Building D-Bus'
 tar -xf dbus-1.10.22.tar.gz
-peif
 cd dbus-1.10.22
-peif
 
 ./configure --prefix=/usr                       \
 	    --sysconfdir=/etc                   \
@@ -1783,7 +1645,6 @@ make -j$MAKEJFLAG > /dev/null
 peif
 make install > /dev/null
 peif
-#mv -v /usr/lib/libdbus-1.so.* /lib
 ln -sf ../../lib/$(readlink /usr/lib/libdbus-1.so) /usr/lib/libdbus-1.so
 ln -sf /etc/machine-id /var/lib/dbus
 
@@ -1796,9 +1657,7 @@ echo -e '(6.64) Done building Dbus\n'
 #6.65 Util-linux
 echo -e '\n(6.65) Building Util-linux'
 tar -xf util-linux-2.30.1.tar.xz
-peif
 cd util-linux-2.30.1
-peif
 
 mkdir -p /var/lib/hwclock
 ./configure ADJTIME_PATH=/var/lib/hwclock/adjtime   \
@@ -1829,9 +1688,7 @@ echo -e '(6.65) Done Building Util-linux\n'
 #6.66 Man-db
 echo -e '\n(6.66) Building Man-db'
 tar -xf man-db-2.7.6.1.tar.xz
-peif
 cd man-db-2.7.6.1
-peif
 
 ./configure --prefix=/usr                        \
 	    --docdir=/usr/share/doc/man-db-2.7.6.1 \
@@ -1857,9 +1714,7 @@ echo -e '(6.66) Done Building Man-db\n'
 #6.67 Tar
 echo -e '\n(6.67) Building Tar'
 tar -xf tar-1.29.tar.xz
-peif
 cd tar-1.29
-peif
 
 FORCE_UNSAFE_CONFIGURE=1  \
 ./configure --prefix=/usr \
@@ -1881,9 +1736,7 @@ echo -e '(6.67) Done building Tar\n'
 #6.68 texinfo
 echo -e '\n(6.68) Building Texinfo'
 tar -xf texinfo-6.4.tar.xz
-peif
 cd texinfo-6.4
-peif
 
 ./configure --prefix=/usr --disable-static > /dev/null
 peif
@@ -1902,9 +1755,7 @@ echo -e '(6.68) Done Building Texinfo\n'
 #6.69 vim
 echo -e '\n(6.69) Building vim'
 tar -xf vim-8.0.586.tar.bz2
-peif
 cd vim80
-peif
 
 echo '#define SYS_VIMRC_FILE "/etc/vimrc"' >> src/feature.h
 sed -i '/call/{s/split/xsplit/;s/303/492/}' src/testdir/test_recover.vim
@@ -1991,11 +1842,8 @@ echo -e '(7.x) Done Configuring the system'
 
 #Linux Kernel
 echo -e '\nBuilding Linux Kernel ...'
-
 tar -xf linux-4.12.7.tar.xz
-peif
 cd linux-4.12.7
-peif
 
 make mrproper
 cp /LINUX_CONFIG /boot/config-4.12.7
