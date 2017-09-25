@@ -3,6 +3,8 @@
 #Compile lfs chapter 6
 #Direct the output to a file for
 #later reference in case anything goes wrong
+#Linkpak is used to manager installed packages
+mkdir /linkpak
 
 #Run if Tests
 function rit(){
@@ -39,23 +41,23 @@ function peif(){
 
 #6.5 Creating directories
 echo -e '\n(6.5-6) Creating directory structure\n'
-mkdir -p /{boot,etc/{opt,sysconfig},home,mnt,var}
+mkdir /{boot,etc,home,mnt,var}
 install -d -m 0750 /root
 install -d -m 1777 /tmp /var/tmp
 mkdir -p /usr/{,local/}{bin,include,lib,sbin,lib64}
-ln -s /usr/bin /bin
-ln -s /usr/sbin /sbin
-ln -s /usr/lib /lib
-ln -s /usr/lib64 /lib64
-mkdir -p /usr/{,local/}share/{color,dict,doc,info,locale,man}
+ln -s usr/bin /bin
+ln -s usr/sbin /sbin
+ln -s usr/lib /lib
+ln -s usr/lib64 /lib64
+mkdir -p /usr/{,local/}share/{doc,info,locale,man}
 mkdir /usr/{,local/}share/{misc,terminfo,zoneinfo}
 mkdir  /usr/libexec
 mkdir -p /usr/{,local/}share/man/man{1..8}
 
-mkdir /var/{log,mail,spool}
+mkdir /var/log
 ln -s /run /var/run
 ln -s /run/lock /var/lock
-mkdir -p /var/{opt,cache,lib/{color,misc,locate},local}
+mkdir -p /var/{cache,lib/locate,local}
 
 ln -s /tools/bin/{bash,cat,dd,echo,ln,pwd,rm,stty} /bin
 ln -s /tools/bin/{install,perl} /usr/bin
@@ -125,12 +127,14 @@ chgrp utmp /var/log/lastlog
 chmod 664  /var/log/lastlog
 chmod 600  /var/log/btmp
 
-#6.7 Linux API Headers
+
+#L6.7 Linux API Headers
 echo -e '\n(6.7) Building Linux API Headers'
 tar -xf linux-4.12.7.tar.xz
 peif
 cd linux-4.12.7
 peif
+mkdir -p /linkpak/linux-api/usr/include/
 
 make mrproper > /dev/null
 peif
@@ -139,34 +143,38 @@ make INSTALL_HDR_PATH=dest headers_install > /dev/null
 peif
 find dest/include \( -name .install -o -name ..install.cmd \) -delete
 peif
-cp -r dest/include/* /usr/include
+cp -r dest/include/* /linkpak/linux-api/usr/include/
 peif
 
+linkpak -f linux-api
 cs
 \rm -Rf linux-4.12.7
 echo -e '(6.7) Done Building Linux API Headers\n'
 
 
-#6.8 Man-pages
+#L6.8 Man-pages
 echo -e '\n(6.8) Building Man-pages'
 tar -xf man-pages-4.12.tar.xz
 peif
 cd man-pages-4.12
+mkdir /linkpak/man-pages
 
-make install > /dev/null
+make DESTDIR=/linkpak/man-pages install > /dev/null
 peif
 
+linkpak -f man-pages
 cs
 \rm -Rf man-pages-4.12
 echo -e '(6.8) Done Building Man-pages\n'
 
 
-#6.9 Glibc
+#L6.9 Glibc
 echo -e '\n(6.9) Building Glibc'
 tar -xf glibc-2.26.tar.xz
 peif
 cd glibc-2.26
 peif
+mkdir /linkpak/glibc
 
 patch -Np1 -i ../glibc-2.26-fhs-1.patch
 peif
@@ -192,7 +200,7 @@ cd build
 peif
 
 CC="gcc -isystem $GCC_INCDIR -isystem /usr/include" \
-  ../configure --prefix=/usr                          \
+../configure --prefix=/usr               \
   --disable-werror                       \
   --enable-kernel=3.2                    \
   --enable-stack-protector=strong        \
@@ -209,45 +217,41 @@ touch /etc/ld.so.conf
 peif
 sed '/test-installation/s@$(PERL)@echo not running@' -i ../Makefile
 peif
-
-make install > /dev/null
+make DESTDIR=/linkpak/glibc install > /dev/null
 peif
 
-cp ../nscd/nscd.conf /etc/nscd.conf
-peif
-mkdir -p /var/cache/nscd
-peif
-install -Dm644 ../nscd/nscd.tmpfiles /usr/lib/tmpfiles.d/nscd.conf
-peif
-install -Dm644 ../nscd/nscd.service /lib/systemd/system/nscd.service
-peif
+mkdir /linkpak/glibc/etc/
+cp ../nscd/nscd.conf /linkpak/glibc/etc/nscd.conf
+mkdir -p /linkpak/glibc/var/cache/nscd
+install -Dm644 ../nscd/nscd.tmpfiles /linkpak/glibc/usr/lib/tmpfiles.d/nscd.conf
+install -Dm644 ../nscd/nscd.service /linkpak/glibc/lib/systemd/system/nscd.service
+
+linkpak -f glibc
 
 mkdir -p /usr/lib/locale
-localedef -i cs_CZ -f UTF-8 cs_CZ.UTF-8
-localedef -i de_DE -f ISO-8859-1 de_DE
-localedef -i de_DE@euro -f ISO-8859-15 de_DE@euro
-localedef -i de_DE -f UTF-8 de_DE.UTF-8
-localedef -i en_GB -f UTF-8 en_GB.UTF-8
-localedef -i en_HK -f ISO-8859-1 en_HK
-localedef -i en_PH -f ISO-8859-1 en_PH
+#localedef -i cs_CZ -f UTF-8 cs_CZ.UTF-8
+#localedef -i de_DE -f ISO-8859-1 de_DE
+#localedef -i de_DE@euro -f ISO-8859-15 de_DE@euro
+#localedef -i de_DE -f UTF-8 de_DE.UTF-8
+#localedef -i en_GB -f UTF-8 en_GB.UTF-8
+#localedef -i en_HK -f ISO-8859-1 en_HK
+#localedef -i en_PH -f ISO-8859-1 en_PH
 localedef -i en_US -f ISO-8859-1 en_US
 localedef -i en_US -f UTF-8 en_US.UTF-8
-localedef -i es_MX -f ISO-8859-1 es_MX
-localedef -i fa_IR -f UTF-8 fa_IR
-localedef -i fr_FR -f ISO-8859-1 fr_FR
-localedef -i fr_FR@euro -f ISO-8859-15 fr_FR@euro
-localedef -i fr_FR -f UTF-8 fr_FR.UTF-8
-localedef -i it_IT -f ISO-8859-1 it_IT
-localedef -i it_IT -f UTF-8 it_IT.UTF-8
-localedef -i ja_JP -f EUC-JP ja_JP
-localedef -i ru_RU -f KOI8-R ru_RU.KOI8-R
-localedef -i ru_RU -f UTF-8 ru_RU.UTF-8
-localedef -i tr_TR -f UTF-8 tr_TR.UTF-8
-localedef -i zh_CN -f GB18030 zh_CN.GB18030
+#localedef -i es_MX -f ISO-8859-1 es_MX
+#localedef -i fa_IR -f UTF-8 fa_IR
+#localedef -i fr_FR -f ISO-8859-1 fr_FR
+#localedef -i fr_FR@euro -f ISO-8859-15 fr_FR@euro
+#localedef -i fr_FR -f UTF-8 fr_FR.UTF-8
+#localedef -i it_IT -f ISO-8859-1 it_IT
+#localedef -i it_IT -f UTF-8 it_IT.UTF-8
+#localedef -i ja_JP -f EUC-JP ja_JP
+#localedef -i ru_RU -f KOI8-R ru_RU.KOI8-R
+#localedef -i ru_RU -f UTF-8 ru_RU.UTF-8
+#localedef -i tr_TR -f UTF-8 tr_TR.UTF-8
+#localedef -i zh_CN -f GB18030 zh_CN.GB18030
 
-cat > /etc/nsswitch.conf <<"EOF"
-# Begin /etc/nsswitch.conf
-
+cat > /linkpak/glibc/etc/nsswitch.conf <<"EOF"
 passwd: files
 group: files
 shadow: files
@@ -259,8 +263,6 @@ protocols: files
 services: files
 ethers: files
 rpc: files
-
-# End /etc/nsswitch.conf
 EOF
 peif
 
@@ -327,58 +329,58 @@ rm dummy.c a.out dummy.log
 echo -e '(6.10) Done adjusting the toolchain\n'
 
 
-#6.11 Zlib
+#L6.11 Zlib
 echo -e '\n(6.11) Building zlib'
 tar -xf zlib-1.2.11.tar.xz
 peif
 cd zlib-1.2.11
 peif
+mkdir /linkpak/zlib/
 
 ./configure --prefix=/usr > /dev/null
 peif
 make -j$MAKEJFLAG > /dev/null
 peif
 rit make check 2> $cl/6.11zlib > /dev/null
-make install > /dev/null
+make DESTDIR=/linkpak/zlib/ install > /dev/null
 peif
+ln -sf /linkpak/zlib/usr/lib/libz.so.1.2.11 /linkpak/zlib/usr/lib/libz.so
 
-#mv -v /usr/lib/libz.so.* /lib
-peif
-ln -sf ../../lib/$(readlink /usr/lib/libz.so) /usr/lib/libz.so
-peif
-
+linkpak -f zlib
 cs
 \rm -Rf zlib-1.2.11
-peif
 echo -e '(6.11) Done Building Zlib\n'
 
 
-#6.12 File
+#L6.12 File
 echo -e '\n(6.12) Building File'
 tar -xf file-5.31.tar.gz
 peif
 cd file-5.31
 peif
+mkdir /linkpak/file
 
 ./configure --prefix=/usr > /dev/null
 peif
 make -j$MAKEJFLAG > /dev/null
 peif
 rit make check 2> $cl/6.12file > /dev/null
-make install > /dev/null
+make DESTDIR=/linkpak/file install > /dev/null
 peif
 
+linkpak -f file
 cs
 \rm -Rf file-5.31
 echo -e '(6.12) Done Building File\n'
 
 
-#6.13 Readline
+#L6.13 Readline
 echo -e '\n(6.13) Building Readline'
 tar -xf readline-7.0.tar.gz
 peif
 cd readline-7.0
 peif
+mkdir /linkpak/readline
 
 sed -i '/MV.*old/d' Makefile.in
 peif
@@ -391,46 +393,45 @@ peif
 peif
 make SHLIB_LIBS="-L/tools/lib -lncursesw" > /dev/null
 peif
-make SHLIB_LIBS="-L/tools/lib -lncurses" install > /dev/null
+make DESTDIR=/linkpak/readline SHLIB_LIBS="-L/tools/lib -lncurses" install > /dev/null
 peif
+ln -sf /linkpak/readline/usr/lib/libreadline.so.7 /linkpak/readline/usr/lib/libreadline.so
+ln -sf /linkpak/readline/usr/lib/libhistory.so.7 /linkpak/readline/usr/lib/libhistory.so
 
-#mv -v /usr/lib/lib{readline,history}.so.* /lib
-peif
-ln -sf ../../lib/$(readlink /usr/lib/libreadline.so) /usr/lib/libreadline.so
-peif
-ln -sf ../../lib/$(readlink /usr/lib/libhistory.so ) /usr/lib/libhistory.so
-peif
-
+linkpak -f readline
 cs
 \rm -Rf readline-7.0
 echo -e '(6.13) Done Building Readline'
 
 
-#6.14 m4
+#L6.14 m4
 echo -e '\n(6.14) Building m4'
 tar -xf m4-1.4.18.tar.xz
 peif
 cd m4-1.4.18
 peif
+mkdir /linkpak/m4/
 
 ./configure --prefix=/usr > /dev/null
 peif
 make -j$MAKEJFLAG > /dev/null
 peif
-make install > /dev/null
+make DESTDIR=/linkpak/m4 install > /dev/null
 peif
 
+linkpak -f m4
 cs
 \rm -Rf m4-1.4.18
 echo -e '(6.14) Done Building m4\n'
 
 
-#6.15 bc
+#L6.15 bc
 echo -e '(6.15) Building bc'
 tar -xf bc-1.07.1.tar.gz
 peif
 cd bc-1.07.1
 peif
+mkdir /linkpak/bc
 
 cat > bc/fix-libmath_h <<"EOF"
 #! /bin/bash
@@ -460,20 +461,22 @@ peif
 make -j$MAKEJFLAG > /dev/null
 peif
 rit echo "quit" | ./bc/bc -l Test/checklib.b 2> $cl/6.15bc > /dev/null
-make install > /dev/null
+make DESTDIR=/linkpak/bc/ install > /dev/null
 peif
 
+linkpak -f bc
 cs
 \rm -Rf bc-1.07.1
 echo -e '(6.15) Done Building bc'
 
 
-#6.16 Binutils
+#L6.16 Binutils
 echo -e '\n(6.16) Building Binutils'
 tar -xf binutils-2.29.tar.bz2
 peif
 cd binutils-2.29
 peif
+mkdir /linkpak/binutils
 
 expect -c "spawn ls" | grep spawn
 peif
@@ -493,20 +496,22 @@ peif
 make tooldir=/usr -j$MAKEJFLAG > /dev/null
 peif
 rit make -k check 2> $cl/6.16binutils > /dev/null
-make tooldir=/usr install > /dev/null
+make DESTDIR=/linkpak/binutils tooldir=/usr install > /dev/null
 peif
 
+linkpak -f binutils
 cs
 \rm -Rf binutils-2.29
 echo -e '(6.16) Done Building Binutils\n'
 
 
-#6.17 gmp
+#L6.17 gmp
 echo -e '\n(6.17) Building GMP'
 tar -xf gmp-6.1.2.tar.xz
 peif
 cd gmp-6.1.2
 peif
+mkdir /linkpak/gmp
 
 ./configure --prefix=/usr    \
 	   --enable-cxx     \
@@ -516,21 +521,23 @@ peif
 make -j$MAKEJFLAG > /dev/null
 peif
 rit make check 2> $cl/6.17gmp > /dev/null
-awk '/# PASS:/{total+=$3} ; END{print total}' gmp-check-log
-make install > /dev/null
+rit awk '/# PASS:/{total+=$3} ; END{print total}' gmp-check-log
+make DESTDIR=/linkpak/gmp install > /dev/null
 peif
 
+linkpak -f gmp
 cs
 \rm -Rf gmp-6.1.2
 echo -e '(6.18) Done Building GMP'
 
 
-#6.18 MPFR
+#L6.18 MPFR
 echo -e '\n(6.18) Building MPFR'
 tar -xf mpfr-3.1.5.tar.xz
 peif
 cd mpfr-3.1.5
 peif
+mkdir /linkpak/mpfr
 
 ./configure --prefix=/usr        \
 	    --disable-static     \
@@ -540,20 +547,22 @@ peif
 make -j$MAKEJFLAG > /dev/null
 peif
 rit make check 2> $cl/6.18mpfr > /dev/null
-make install > /dev/null
+make DESTDIR=/linkpak/mpfr install > /dev/null
 peif
 
+linkpak -f mpfr
 cs
 \rm -Rf mpfr-3.1.5
 echo -e '(6.18) Done Building MPFR\n'
 
 
-#6.19 MPC
+#L6.19 MPC
 echo -e '\n(6.19) Building MPC'
 tar -xf mpc-1.0.3.tar.gz
 peif
 cd mpc-1.0.3
 peif
+mkdir /linkpak/mpc
 
 ./configure --prefix=/usr    \
 	    --disable-static \
@@ -562,21 +571,23 @@ peif
 make -j$MAKEJFLAG > /dev/null
 peif
 rit make check 2> $cl/6.19mpc > /dev/null
-make install > /dev/null
+make DESTDIR=/linkpak/mpc install > /dev/null
 peif
 
+linkpak -f mpc
 cs
 \rm -Rf mpc-1.0.3
 peif
 echo -e '(6.19) Done Building MPC\n'
 
 
-#6.20 GCC
+#L6.20 GCC
 echo -e '\n(6.20) Building GCC'
 tar -xf gcc-7.2.0.tar.xz
 peif
 cd gcc-7.2.0
 peif
+mkdir /linkpak/gcc
 
 case $(uname -m) in
     x86_64)
@@ -590,8 +601,8 @@ mkdir build
 cd build
 peif
 
-SED=sed                               \
-../configure --prefix=/usr            \
+SED=sed                     \
+../configure --prefix=/usr  \
    --enable-languages=c,c++ \
    --disable-multilib       \
    --disable-bootstrap      \
@@ -602,14 +613,20 @@ peif
 ulimit -s 32768
 rit make -k check 2> $cl/6.20gcc > /dev/null
 rit ../contrib/test_summary >> $cl/6.20gcc
-make install > /dev/null
+make DESTDIR=/linkpak/gcc install > /dev/null
 peif
 
-ln -s ../usr/bin/cpp /lib
-ln -s gcc /usr/bin/cc
-install -dm755 /usr/lib/bfd-plugins
-ln -sf ../../libexec/gcc/$(gcc -dumpmachine)/7.2.0/liblto_plugin.so \
-   /usr/lib/bfd-plugins/
+mkdir /linkpak/gcc/lib
+ln -s /linkpak/gcc/usr/bin/cpp /linkpak/gcc/lib/cpp
+
+ln -s /linkpak/gcc/usr/bin/gcc /linkpak/gcc/usr/bin/cc
+
+install -dm755 /linkpak/gcc/usr/lib/bfd-plugins
+
+ln -sf /linkpak/gcc/usr/libexec/gcc/$(gcc -dumpmachine)/7.2.0/liblto_plugin.so \
+   /linkpak/gcc/usr/lib/bfd-plugins/
+
+linkpak -f gcc
 
 #Test compiler
 echo 'int main(){}' > dummy.c
@@ -626,16 +643,16 @@ mv /usr/lib/*gdb.py /usr/share/gdb/auto-load/usr/lib
 
 cs
 \rm -Rf gcc-7.2.0
-peif
 echo -e '(6.20) Done Building GCC\n'
 
 
-#6.21 Bzip2
+#L6.21 Bzip2
 echo -e '\n(6.21) Building Bzip2'
 tar -xf bzip2-1.0.6.tar.gz
 peif
 cd bzip2-1.0.6
 peif
+mkdir /linkpak/bzip2
 
 patch -Np1 -i ../bzip2-1.0.6-install_docs-1.patch
 peif
@@ -650,28 +667,41 @@ make clean > /dev/null
 peif
 make -j$MAKEJFLAG > /dev/null
 peif
-make PREFIX=/usr install > /dev/null
+make PREFIX=/linkpak/bzip2/usr install > /dev/null 
 peif
 
-cp bzip2-shared /bin/bzip2
-cp -a libbz2.so* /lib
-ln -s ../../lib/libbz2.so.1.0 /usr/lib/libbz2.so
-rm /usr/bin/{bunzip2,bzcat,bzip2}
-ln -s bzip2 /bin/bunzip2
-ln -s bzip2 /bin/bzcat
+mkdir -p /linkpak/bzip2/bin /linkpak/bzip2/lib/
+#cp bzip2-shared /bin/bzip2
+cp bzip2-shared /linkpak/bzip2/bin/bzip2
+peif
+#cp -a libbz2.so* /lib/
+cp -a libbz2.so* /linkpak/bzip2/lib/
+peif
+#ln -s /usr/lib/libbz2.so.1.0 /usr/lib/libbz2.so
+ln -s /linkpak/bzip2/lib/libbz2.so.1.0 /linkpak/bzip2/lib/libbz2.so
+peif
+#rm /usr/bin/{bunzip2,bzcat}
+rm /linkpak/bzip2/usr/bin/{bunzip2,bzcat}
+peif
 
+#ln -s /bin/bzip2 /bin/bunzip2
+ln -s /linkpak/bzip2/bin/bzip2 /linkpak/bzip2/bin/bunzip2
+#ln -s /bin/bzip2 /bin/bzcat
+ln -s /linkpak/bzip2/bin/bzip2 /linkpak/bzip2/bin/bzcat
+
+linkpak -f bzip2
 cs
 \rm -Rf bzip2-1.0.6
-peif
 echo -e '(6.21) Done Building Bzip2\n'
 
 
-#6.22 Pkg-config
+#L6.22 Pkg-config
 echo -e '\n(6.22) Building Pkg-config'
 tar -xf pkg-config-0.29.2.tar.gz
 peif
 cd pkg-config-0.29.2
 peif
+mkdir /linkpak/pkg-config/
 
 ./configure --prefix=/usr              \
 	    --with-internal-glib       \
@@ -681,21 +711,22 @@ peif
 make -j$MAKEJFLAG > /dev/null
 peif
 rit make check 2> $cl/6.22pkgconfig > /dev/null
-make install > /dev/null
+make DESTDIR=/linkpak/pkg-config install > /dev/null
 peif
 
+linkpak -f pkg-config
 cs
 \rm -Rf pkg-config-0.29.2
-peif
 echo -e '(6.22) Done Building pkg-config\n'
 
 
-#6.23 Ncurses
+#L6.23 Ncurses
 echo -e '\n(6.23) Building Ncurses'
 tar -xf ncurses-6.0.tar.gz
 peif
 cd ncurses-6.0
 peif
+mkdir /linkpak/ncurses
 
 sed -i '/LIBTOOL_INSTALL/d' c++/Makefile.in
 peif
@@ -710,32 +741,43 @@ peif
 peif
 make -j$MAKEJFLAG > /dev/null
 peif
-make install > /dev/null
+make DESTDIR=/linkpak/ncurses install > /dev/null
 peif
 
-#mv -v /usr/lib/libncursesw.so.6* /lib
-ln -sf ../../lib/$(readlink /usr/lib/libncursesw.so) /usr/lib/libncursesw.so
+mkdir -p /linkpak/ncurses/usr/lib/pkgconfig/
+peif
 for lib in ncurses form panel menu ; do
-    rm -f                    /usr/lib/lib${lib}.so
-    echo "INPUT(-l${lib}w)" > /usr/lib/lib${lib}.so
-    ln -sf ${lib}w.pc        /usr/lib/pkgconfig/${lib}.pc
+    #rm -f /usr/lib/lib${lib}.so
+    rm -f /linkpak/ncurses/usr/lib/lib${lib}.so
+    echo "INPUT(-l${lib}w)" > /linkpak/ncurses/usr/lib/lib${lib}.so
+    #ln -sf ${lib}w.pc /usr/lib/pkgconfig/${lib}.pc
+    ln -sf ${lib}w.pc /linkpak/ncurses/usr/lib/pkgconfig/${lib}.pc
 done
-rm -f                     /usr/lib/libcursesw.so
-echo "INPUT(-lncursesw)" > /usr/lib/libcursesw.so
-ln -sf libncurses.so      /usr/lib/libcurses.so
 
+rm -vf /linkpak/ncurses/usr/lib/libcursesw.so
+peif
+echo "INPUT(-lncursesw)" > /linkpak/ncurses/usr/lib/libcursesw.so
+peif
+rm -f /linkpak/ncurses/usr/lib/libncurses.so
+peif
+echo "INPUT(-lncursesw)" > /linkpak/ncurses/usr/lib/libncurses.so
+peif
+ln -sfv ./libncurses.so /linkpak/ncurses/usr/lib/libcurses.so
+peif
+
+linkpak -f ncurses
 cs
 \rm -Rf ncurses-6.0
-peif
 echo -e '(6.24) Done Building Ncurses\n'
 
 
-#6.24 Attr
+#L6.24 Attr
 echo -e '\n(6.24) Building Attr'
 tar -xf attr-2.4.47.src.tar.gz
 peif
 cd attr-2.4.47
 peif
+mkdir /linkpak/attr
 
 sed -i -e 's|/@pkg_name@|&-@pkg_version@|' include/builddefs.in
 peif
@@ -750,26 +792,24 @@ peif
 make -j$MAKEJFLAG > /dev/null
 peif
 rit make -j1 tests root-tests 2> $cl/6.24attr > /dev/null
-make install install-dev install-lib > /dev/null
+make DESTDIR=/linkpak/attr install install-dev install-lib > /dev/null
 peif
-chmod 755 /usr/lib/libattr.so
-peif
+chmod 755 /linkpak/attr/usr/lib/libattr.so
+ln -sf /linkpak/attr/usr/lib/libattr.so.1 /linkpak/attr/usr/lib/libattr.so
 
-#mv -v /usr/lib/libattr.so.* /lib
-ln -sf ../../lib/$(readlink /usr/lib/libattr.so) /usr/lib/libattr.so
-
+linkpak -f attr
 cs
 \rm -Rf attr-2.4.47
-peif
 echo -e '(6.24) Done Building Attr\n'
 
 
-#6.25 Acl
+#L6.25 Acl
 echo -e '\n(6.25) Building Acl'
 tar -xf acl-2.2.52.src.tar.gz
 peif
 cd acl-2.2.52
 peif
+mkdir /linkpak/acl
 
 sed -i -e 's|/@pkg_name@|&-@pkg_version@|' include/builddefs.in
 sed -i "s:| sed.*::g" test/{sbits-restore,cp,misc}.test
@@ -783,53 +823,48 @@ sed -i -e "/TABS-1;/a if (x > (TABS-1)) x = (TABS-1);" \
 peif
 make -j$MAKEJFLAG > /dev/null
 peif
-make install install-dev install-lib > /dev/null
+make DESTDIR=/linkpak/acl install install-dev install-lib > /dev/null
 peif
-chmod 755 /usr/lib/libacl.so
-peif
-#mv -v /usr/lib/libacl.so.* /lib
-ln -sf ../../lib/$(readlink /usr/lib/libacl.so) /usr/lib/libacl.so
+chmod 755 /linkpak/acl/usr/lib/libacl.so
+ln -sf /linkpak/acl/usr/lib/libacl.so.1 /linkpak/acl/usr/lib/libacl.so
 
+linkpak -f acl
 cs
 \rm -Rf acl-2.2.52
-peif
 echo -e '(6.25) Done Building ACL\n'
 
 
-#6.26 Libcap
+#L6.26 Libcap
 echo -e '\n(6.26) Building Libcap'
 tar -xf libcap-2.25.tar.xz
 peif
 cd libcap-2.25
 peif
+mkdir /linkpak/libcap
 
 sed -i '/install.*STALIBNAME/d' libcap/Makefile
 peif
 
 make -j$MAKEJFLAG > /dev/null
 peif
-make RAISE_SETFCAP=no lib=lib prefix=/usr install > /dev/null
+make DESTDIR=/linkpak/libcap RAISE_SETFCAP=no lib=lib prefix=/usr install > /dev/null
 peif
-chmod 755 /usr/lib/libcap.so
-peif
+chmod 755 /linkpak/libcap/usr/lib/libcap.so
+ln -sf /linkpak/libcap/usr/lib/libcap.so.2 /linkpak/libcap/usr/lib/libcap.so
 
-#mv -v /usr/lib/libcap.so.* /lib
-peif
-ln -sf ../../lib/$(readlink /usr/lib/libcap.so) /usr/lib/libcap.so
-peif
-
+linkpak -f libcap
 cs
 \rm -Rf libcap-2.25
-peif
 echo -e '(6.26) Done Building Libcap\n'
 
 
-#6.27 Sed
+#L6.27 Sed
 echo -e '\n(6.27) Building Sed'
 tar -xf sed-4.4.tar.xz
 peif
 cd sed-4.4
 peif
+mkdir /linkpak/sed/
 
 sed -i 's/usr/tools/'                 build-aux/help2man
 sed -i 's/testsuite.panic-tests.sh//' Makefile.in
@@ -838,21 +873,22 @@ sed -i 's/testsuite.panic-tests.sh//' Makefile.in
 peif
 make -j$MAKEJFLAG > /dev/null
 peif
-make install > /dev/null
+make DESTDIR=/linkpak/sed/ install > /dev/null
 peif
 
+linkpak -f sed
 cs
 \rm -Rf sed-4.4
-peif
 echo -e '(6.27) Done Building Sed\n'
 
 
-#6.28 Shadow
+#L6.28 Shadow
 echo -e '\n(6.28) Building Shadow'
 tar -xf shadow-4.5.tar.xz
 peif
 cd shadow-4.5
 peif
+mkdir /linkpak/shadow
 
 sed -i 's/groups$(EXEEXT) //' src/Makefile.in
 find man -name Makefile.in -exec sed -i 's/groups\.1 / /'   {} \;
@@ -866,85 +902,87 @@ sed -i 's/1000/999/' etc/useradd
 peif
 make -j$MAKEJFLAG > /dev/null
 peif
-make install > /dev/null
+make DESTDIR=/linkpak/shadow install > /dev/null
 peif
-#mv -v /usr/bin/passwd /bin
+linkpak -f shadow
 
 pwconv
+peif
 grpconv
-
+peif
 cs
 \rm -Rf shadow-4.5
-peif
 echo -e '(6.28) Done building Shadow\n'
 
 
-#6.29 psmisc
+#L6.29 psmisc
 echo -e '\n(6.29) Building psmisc'
 tar -xf psmisc-23.1.tar.xz
 peif
 cd psmisc-23.1
 peif
+mkdir /linkpak/psmisc
 
 ./configure --prefix=/usr > /dev/null
 peif
 make -j$MAKEJFLAG > /dev/null
 peif
-make install > /dev/null
+make DESTDIR=/linkpak/psmisc install > /dev/null
 peif
-#mv -v /usr/bin/fuser   /bin
-#mv -v /usr/bin/killall /bin
 
+linkpak -f psmisc
 cs
 \rm -Rf psmisc-23.1
-peif
 echo -e '(6.29) Done Building psmisc\n'
 
 
-#6.30 iana-etc
+#L6.30 iana-etc
 echo -e '\n(6.30) Building iana-etc'
 tar -xf iana-etc-2.30.tar.bz2
 peif
 cd iana-etc-2.30
 peif
+mkdir /linkpak/iana-etc
 
 make -j$MAKEJFLAG > /dev/null
 peif
-make install > /dev/null
+make DESTDIR=/linkpak/iana-etc install > /dev/null
 peif
 
+linkpak -f iana-etc
 cs
 \rm -Rf iana-etc-2.30
-peif
 echo -e '(6.30) Done building iana-etc\n'
 
 
-#6.31 Bison
+#L6.31 Bison
 echo -e '\n(6.31) Building Bison'
 tar -xf bison-3.0.4.tar.xz
 peif
 cd bison-3.0.4
 peif
+mkdir /linkpak/bison
 
 ./configure --prefix=/usr --docdir=/usr/share/doc/bison-3.0.4 > /dev/null
 peif
 make -j$MAKEJFLAG > /dev/null
 peif
-make install > /dev/null
+make DESTDIR=/linkpak/bison install > /dev/null
 peif
 
+linkpak -f bison
 cs
 \rm -Rf bison-3.0.4
-peif
 echo -e '(6.31) Done Building Bison\n'
 
 
-#6.32 Flex
+#L6.32 Flex
 echo -e '\n(6.32) Building Flex'
 tar -xf flex-2.6.4.tar.gz
 peif
 cd flex-2.6.4
 peif
+mkdir /linkpak/flex
 
 sed -i "/math.h/a #include <malloc.h>" src/flexdef.h
 peif
@@ -954,43 +992,45 @@ peif
 make -j$MAKEJFLAG > /dev/null
 peif
 rit make check 2> $cl/6.32flex > /dev/null
-make install > /dev/null
+make DESTDIR=/linkpak/flex install > /dev/null
 peif
-ln -s flex /usr/bin/lex
+ln -s /linkpak/flex/usr/bin/flex /linkpak/flex/usr/bin/lex
 
+linkpak -f flex
 cs
 \rm -Rf flex-2.6.4
-peif
 echo -e '(6.32) Done Building Flex\n'
 
 
-#6.33 Grep
+#L6.33 Grep
 echo -e '\n(6.33) Building Grep'
 tar -xf grep-3.1.tar.xz
 peif
 cd grep-3.1
 peif
+mkdir /linkpak/grep
 
 ./configure --prefix=/usr --bindir=/bin > /dev/null
 peif
 make -j$MAKEJFLAG > /dev/null
 peif
 rit make check 2> $cl/6.33grep > /dev/null
-make install > /dev/null
+make DESTDIR=/linkpak/grep install > /dev/null
 peif
 
+linkpak -f grep
 cs
 \rm -Rf grep-3.1
-peif
 echo -e '(6.33) Done building Grep\n'
 
 
-#6.34 Bash
+#L6.34 Bash
 echo -e '\n(6.34) Building BASH'
 tar -xf bash-4.4.tar.gz
 peif
 cd bash-4.4
 peif
+mkdir /linkpak/bash
 
 patch -Np1 -i ../bash-4.4-upstream_fixes-1.patch
 peif
@@ -1003,43 +1043,44 @@ make -j$MAKEJFLAG > /dev/null
 peif
 chown -R nobody .
 rit su nobody -s /bin/bash -c "PATH=$PATH make tests" 2> $cl/6.24bash > /dev/null
-make install > /dev/null
+make DESTDIR=/linkpak/bash install > /dev/null
 peif
-#mv -vf /usr/bin/bash /bin
 
+linkpak -f bash
 cs
 \rm -Rf bash-4.4
-peif
 echo -e '(6.34) Done Building Bash\n'
 
 
-#6.35 Libtool
+#L6.35 Libtool
 echo -e '\n(6.35) Building Libtool'
 tar -xf libtool-2.4.6.tar.xz
 peif
 cd libtool-2.4.6
 peif
+mkdir /linkpak/libtool
 
 ./configure --prefix=/usr > /dev/null
 peif
 make -j$MAKEJFLAG > /dev/null
 peif
 rit make check 2> $cl/6.35libtool > /dev/null
-make install > /dev/null
+make DESTDIR=/linkpak/libtool install > /dev/null
 peif
 
+linkpak -f libtool
 cs
 \rm -Rf libtool-2.4.6
-peif
 echo -e '(6.35) Done Building Libtool\n'
 
 
-#6.36 GDBM
+#L6.36 GDBM
 echo -e '\n(6.36) Building GDBM'
 tar -xf gdbm-1.13.tar.gz
 peif
 cd gdbm-1.13
 peif
+mkdir /linkpak/gdbm
 
 ./configure --prefix=/usr \
 	    --disable-static \
@@ -1048,42 +1089,44 @@ peif
 make -j$MAKEJFLAG > /dev/null
 peif
 rit make check 2> $cl/6.36gdbm > /dev/null
-make install > /dev/null
+make DESTDIR=/linkpak/gdbm install > /dev/null
 peif
 
+linkpak -f gdbm
 cs
 \rm -Rf gdbm-1.13
-peif
 echo -e '(6.36) Done Building GDBM\n'
 
 
-#6.37 Gperf
+#L6.37 Gperf
 echo -e '\n(6.37) Building Gperf'
 tar -xf gperf-3.1.tar.gz
 peif
 cd gperf-3.1
 peif
+mkdir /linkpak/gperf
 
 ./configure --prefix=/usr --docdir=/usr/share/doc/gperf-3.1 > /dev/null
 peif
 make -j$MAKEJFLAG > /dev/null
 peif
 rit make -j1 check 2> $cl/6.37gperf > /dev/null
-make install > /dev/null
+make DESTDIR=/linkpak/gperf install > /dev/null
 peif
 
+linkpak -f gperf
 cs
 \rm -Rf gperf-3.1
-peif
 echo -e '(6.37) Done Building Gperf\n'
 
 
-#6.38 Expat
+#L6.38 Expat
 echo -e '\n(6.38) Building Expat'
 tar -xf expat-2.2.3.tar.bz2
 peif
 cd expat-2.2.3
 peif
+mkdir /linkpak/expat
 
 sed -i 's|usr/bin/env |bin/|' run.sh.in
 ./configure --prefix=/usr --disable-static > /dev/null
@@ -1091,21 +1134,22 @@ peif
 make -j$MAKEJFLAG > /dev/null
 peif
 rit make check 2> $cl/6.38expat > /dev/null
-make install > /dev/null
+make DESTDIR=/linkpak/expat install > /dev/null
 peif
 
+linkpak -f expat
 cs
 \rm -Rf expat-2.2.3
-peif
 echo -e '(6.38) Done Building Expat\n'
 
 
-#6.39 Inetutils
+#L6.39 Inetutils
 echo -e '\n(6.39) Building Inetutils'
 tar -xf inetutils-1.9.4.tar.xz
 peif
 cd inetutils-1.9.4
 peif
+mkdir /linkpak/inetutils
 
 ./configure --prefix=/usr        \
 	    --localstatedir=/var \
@@ -1120,24 +1164,24 @@ peif
 make -j$MAKEJFLAG > /dev/null
 peif
 rit make check 2> $cl/6.39inetutils > /dev/null
-make install > /dev/null
+make DESTDIR=/linkpak/inetutils install > /dev/null
 peif
-#mv -v /usr/bin/{hostname,ping,ping6,traceroute} /bin
-#mv -v /usr/bin/ifconfig /sbin
-mv /usr/bin/ifconfig /usr/sbin/
+mkdir /linkpak/inetutils/usr/sbin/
+mv /linkpak/inetutils/usr/{bin,sbin}/ifconfig
 
+linkpak -f inetutils
 cs
 \rm -Rf inetutils-1.9.4
-peif
 echo -e '(6.39) Done Building inetutils\n'
 
 
-#6.40 Perl
+#L6.40 Perl
 echo -e '\n(6.40) Building Perl'
 tar -xf perl-5.26.0.tar.xz
 peif
 cd perl-5.26.0
 peif
+mkdir /linkpak/perl
 
 echo "127.0.0.1 localhost $(hostname)" > /etc/hosts
 export BUILD_ZLIB=False
@@ -1154,43 +1198,45 @@ peif
 make -j$MAKEJFLAG > /dev/null
 peif
 rit make -k test 2> $cl/6.40perl > /dev/null
-make install > /dev/null
+make DESTDIR=/linkpak/perl install > /dev/null
 peif
 unset BUILD_ZLIB BUILD_BZIP2
 
+linkpak -f perl
 cs
 \rm -Rf perl-5.26.0
-peif
 echo -e '(6.40) Done Building Perl\n'
 
 
-#6.41 XML::Parser
+#L6.41 XML::Parser
 echo -e '\n(6.41) Building XML::Parser'
 tar -xf XML-Parser-2.44.tar.gz
 peif
 cd XML-Parser-2.44
 peif
+mkdir /linkpak/xml-parser
 
 perl Makefile.PL > /dev/null
 peif
 make -j$MAKEJFLAG > /dev/null
 peif
 rit make test 2> $cl/6.41xmlparser > /dev/null
-make install > /dev/null
+make DESTDIR=/linkpak/xml-parser install > /dev/null
 peif
 
+linkpak -f xml-parser
 cs
 \rm -Rf XML-Parser-2.44
-peif
 echo -e '(6.41) Done Building XML::Parser\n'
 
 
-#6.42 intltool
+#L6.42 intltool
 echo -e '\n(6.42) Building Intltool'
 tar -xf intltool-0.51.0.tar.gz
 peif
 cd intltool-0.51.0
 peif
+mkdir /linkpak/intltool
 
 sed -i 's:\\\${:\\\$\\{:' intltool-update.in
 ./configure --prefix=/usr > /dev/null
@@ -1198,43 +1244,45 @@ peif
 make -j$MAKEJFLAG > /dev/null
 peif
 rit make check 2> $cl/6.42intltool > /dev/null
-make install > /dev/null
+make DESTDIR=/linkpak/intltool install > /dev/null
 peif
-install -Dm644 doc/I18N-HOWTO /usr/share/doc/intltool-0.51.0/I18N-HOWTO
+install -Dm644 doc/I18N-HOWTO /linkpak/intltool/usr/share/doc/intltool-0.51.0/I18N-HOWTO
 
+linkpak -f intltool
 cs
 \rm -Rf intltool-0.51.0
-peif
 echo -e '(6.42) Done Building intltool\n'
 
 
-#6.43 Autoconf
+#L6.43 Autoconf
 echo -e '\n(6.43) Building Autoconf'
 tar -xf autoconf-2.69.tar.xz
 peif
 cd autoconf-2.69
 peif
+mkdir /linkpak/autoconf
 
 ./configure --prefix=/usr > /dev/null
 peif
 make -j$MAKEJFLAG > /dev/null
 peif
 rit make check 2> $cl/6.43autoconf > /dev/null
-make install > /dev/null
+make DESTDIR=/linkpak/autoconf install > /dev/null
 peif
 
+linkpak -f autoconf
 cs
 \rm -Rf autoconf-2.69
-peif
 echo -e '(6.43) Done Building Autoconf'
 
 
-#6.44 Automake
+#L6.44 Automake
 echo -e '\n(6.44) Building Automake'
 tar -xf automake-1.15.1.tar.xz
 peif
 cd automake-1.15.1
 peif
+mkdir /linkpak/automake
 
 ./configure --prefix=/usr --docdir=/usr/share/doc/automake-1.15.1 > /dev/null
 peif
@@ -1242,21 +1290,22 @@ make -j$MAKEJFLAG > /dev/null
 peif
 sed -i "s:./configure:LEXLIB=/usr/lib/libfl.a &:" t/lex-{clean,depend}-cxx.sh
 rit make -j4 check 2> $cl/6.44automake > /dev/null
-make install > /dev/null
+make DESTDIR=/linkpak/automake install > /dev/null
 peif
 
+linkpak -f automake
 cs
 \rm -Rf automake-1.15.1
-peif
 echo -e '(6.44) Done Building Automake\n'
 
 
-#6.45 XZ
+#L6.45 XZ
 echo -e '\n(6.45) Building Xz'
 tar -xf xz-5.2.3.tar.xz
 peif
 cd xz-5.2.3
 peif
+mkdir /linkpak/xz
 
 ./configure --prefix=/usr    \
 	    --disable-static \
@@ -1265,24 +1314,23 @@ peif
 make -j$MAKEJFLAG > /dev/null
 peif
 rit make check 2> $cl/6.45xz > /dev/null
-make install > /dev/null
+make DESTDIR=/linkpak/xz install > /dev/null
 peif
-#mv /usr/bin/{lzma,unlzma,lzcat,xz,unxz,xzcat} /bin
-#mv /usr/lib/liblzma.so.* /lib
-ln -sf ../../lib/$(readlink /usr/lib/liblzma.so) /usr/lib/liblzma.so
+ll /linkpak/xz/usr/lib/liblzma.so.5.2.3 /linkpak/xz/usr/lib/liblzma.so
 
+linkpak -f xz
 cs
 \rm -Rf xz-5.2.3
-peif
 echo -e '(6.45) Done Building Xz\n'
 
 
-#6.46 Kmod
+#L6.46 Kmod
 echo -e '\n(6.46) Building Kmod'
 tar -xf kmod-24.tar.xz
 peif
 cd kmod-24
 peif
+mkdir /linkpak/kmod
 
 ./configure --prefix=/usr          \
 	    --bindir=/bin          \
@@ -1293,25 +1341,27 @@ peif
 peif
 make -j$MAKEJFLAG > /dev/null
 peif
-make install > /dev/null
+make DESTDIR=/linkpak/kmod install > /dev/null
 peif
+mkdir /linkpak/kmod/sbin/
 for target in depmod insmod lsmod modinfo modprobe rmmod; do
-    ln -sf ../bin/kmod /sbin/$target
+    ln -sf /linkpak/kmod/bin/kmod /linkpak/kmod/sbin/$target
 done
-ln -sf kmod /bin/lsmod
+ln -sf /linkpak/kmod/bin/kmod /linkpak/kmod/bin/lsmod
 
+linkpak -f kmod
 cs
 \rm -Rf kmod-24
-peif
 echo -e '(6.46) Done Building Kmod\n'
 
 
-#6.47 Building Gettext
+#L6.47 Building Gettext
 echo -e '\n(6.47) Building Gettext'
 tar -xf gettext-0.19.8.1.tar.xz
 peif
 cd gettext-0.19.8.1
 peif
+mkdir /linkpak/gettext
 
 sed -i '/^TESTS =/d' gettext-runtime/tests/Makefile.in &&
 sed -i 's/test-lock..EXEEXT.//' gettext-tools/gnulib-tests/Makefile.in
@@ -1323,22 +1373,23 @@ peif
 make -j$MAKEJFLAG > /dev/null
 peif
 rit make check 2> $cl/6.47gettext > /dev/null
-make install > /dev/null
+make DESTDIR=/linkpak/gettext install > /dev/null
 peif
-chmod 0755 /usr/lib/preloadable_libintl.so
+chmod 0755 /linkpak/gettext/usr/lib/preloadable_libintl.so
 
+linkpak -f gettext
 cs
 \rm -Rf gettext-0.19.8.1
-peif
 echo -e '(6.47) Done Building Gettext\n'
 
 
-#6.48 Systemd
+#L6.48 Systemd
 echo -e '\n(6.48) Building systemd'
 tar -xf systemd-234-lfs.tar.xz
 peif
 cd systemd-234-lfs
 peif
+mkdir /linkpak/systemd
 
 cat > config.cache <<"EOF"
 KILL=/bin/kill
@@ -1372,27 +1423,31 @@ EOF
 peif
 make -j$MAKEJFLAG > /dev/null
 peif
-make install > /dev/null
+make DESTDIR=/linkpak/systemd install > /dev/null
 peif
-rm -rf /usr/lib/rpm
+rm -rf /linkpak/systemd/usr/lib/rpm/
+mkdir /linkpak/systemd/sbin/
 for tool in runlevel reboot shutdown poweroff halt telinit; do
-    ln -sf ../bin/systemctl /sbin/${tool}
+    ln -sf /linkpak/systemd/bin/systemctl /linkpak/systemd/sbin/${tool}
 done
-ln -sf ../lib/systemd/systemd /sbin/init
-systemd-machine-id-setup
+#ln -sf ../lib/systemd/systemd /sbin/init
+mkdir /linkpak/systemd/sbin/
+ln -sf /linkpak/systemd/lib/systemd/systemd /linkpak/systemd/sbin/init
 
+linkpak -f systemd
+systemd-machine-id-setup
 cs
 \rm -Rf systemd-234
-peif
 echo -e '(6.48) Done Building Systemd\n'
 
 
-#6.49 Procps-ng
+#L6.49 Procps-ng
 echo -e '\n(6.49) Building Procps-ng'
 tar -xf procps-ng-3.3.12.tar.xz
 peif
 cd procps-ng-3.3.12
 peif
+mkdir /linkpak/procps-ng
 
 ./configure --prefix=/usr                            \
 	    --exec-prefix=                           \
@@ -1407,24 +1462,23 @@ sed -i -r 's|(pmap_initname)\\\$|\1|' testsuite/pmap.test/pmap.exp
 sed -i '/set tty/d' testsuite/pkill.test/pkill.exp
 rm testsuite/pgrep.test/pgrep.exp
 rit make check 2> $cl/6.49procpsng > /dev/null
-make install > /dev/null
+make DESTDIR=/linkpak/procps-ng install > /dev/null
 peif
+ln -sf /linkpak/procps-ng/usr/lib/libprocps.so.6.0.0 /linkpak/procps-ng/usr/lib/libprocps.so
 
-#mv -v /usr/lib/libprocps.so.* /lib
-ln -sf ../../lib/$(readlink /usr/lib/libprocps.so) /usr/lib/libprocps.so
-
+linkpak -f procps-ng
 cs
 \rm -Rf procps-ng-3.3.12
-peif
 echo -e '(6.49) Done Building procps-ng\n'
 
 
-#6.50 e2fsprogs
+#L6.50 e2fsprogs
 echo -e '\n(6.50) Building e2fsprogs'
 tar -xf e2fsprogs-1.43.5.tar.gz
 peif
 cd e2fsprogs-1.43.5
 peif
+mkdir /linkpak/e2fsprogs
 
 mkdir build
 cd build
@@ -1446,26 +1500,27 @@ make -j$MAKEJFLAG > /dev/null
 peif
 ln -sf /tools/lib/lib{blk,uu}id.so.1 lib
 rit make LD_LIBRARY_PATH=/tools/lib check 2> $cl/6.50e2fsprogs > /dev/null
-make install > /dev/null
+make DESTDIR=/linkpak/e2fsprogs install > /dev/null
 peif
-make install-libs > /dev/null
+make DESTDIR=/linkpak/e2fsprogs install-libs > /dev/null
 peif
-chmod u+w /usr/lib/{libcom_err,libe2p,libext2fs,libss}.a
-gunzip /usr/share/info/libext2fs.info.gz
-install-info --dir-file=/usr/share/info/dir /usr/share/info/libext2fs.info
+chmod u+w /linkpak/e2fsprogs/usr/lib/{libcom_err,libe2p,libext2fs,libss}.a
+gunzip /linkpak/e2fsprogs/usr/share/info/libext2fs.info.gz
+install-info --dir-file=/usr/share/info/dir /linkpak/e2fsprogs/usr/share/info/libext2fs.info
 
+linkpak -f e2fsprogs
 cs
 \rm -Rf e2fsprogs-1.43.5
-peif
 echo -e '(6.50) Done Building e2fsprogs\n'
 
 
-#6.51 coreutils
+#L6.51 coreutils
 echo -e '\n(6.51) Buidling Coreutils'
 tar -xf coreutils-8.27.tar.xz
 peif
 cd coreutils-8.27
 peif
+mkdir /linkpak/coreutils
 
 patch -Np1 -i ../coreutils-8.27-i18n-1.patch
 peif
@@ -1483,71 +1538,73 @@ echo "dummy:x:1000:nobody" >> /etc/group
 chown -R nobody .
 rit su nobody -s /bin/bash -c "PATH=$PATH make RUN_EXPENSIVE_TESTS=yes check" 2> $cl/6.51coreutils > /dev/null
 sed -i '/dummy/d' /etc/group
-make install > /dev/null
+make DESTDIR=/linkpak/coreutils install > /dev/null
 peif
 
-#mv -v /usr/bin/{cat,chgrp,chmod,chown,cp,date,dd,df,echo} /bin
-#mv -v /usr/bin/{false,ln,ls,mkdir,mknod,mv,pwd,rm} /bin
-#mv -v /usr/bin/{rmdir,stty,sync,true,uname} /bin
-mv /usr/bin/chroot /usr/sbin
-mv /usr/share/man/man1/chroot.1 /usr/share/man/man8/chroot.8
-sed -i s/\"1\"/\"8\"/1 /usr/share/man/man8/chroot.8
-#mv -v /usr/bin/{head,sleep,nice,test,\[} /bin
+mkdir /linkpak/coreutils/usr/sbin /linkpak/coreutils/usr/share/man8/
+mv /linkpak/coreutils/usr/bin/chroot /linkpak/coreutils/usr/sbin/
+mv /linkpak/coreutils/usr/share/man/man1/chroot.1 /linkpak/coreutils/usr/share/man8/chroot.8
+sed -i s/\"1\"/\"8\"/1 /linkpak/coreutils/usr/share/man/man8/chroot.8
 
+#When installing coreutils, /usr/bin/ln will be temporarily unavailable.
+#Utilize /tools/bin/ln when doing this
+PATH=/tools/bin/ /usr/sbin/linkpak coreutils
 cs
 \rm -Rf coreutils-8.27
-peif
 echo -e '(6.51) Done Building Coreutils\n'
 
 
-#6.52 Diffutils
+#L6.52 Diffutils
 echo -e '\n(6.52) Building Diffutils'
 tar -xf diffutils-3.6.tar.xz
 peif
 cd diffutils-3.6
 peif
+mkdir /linkpak/diffutils
 
 ./configure --prefix=/usr > /dev/null
 peif
 make -j$MAKEJFLAG > /dev/null
 peif
 rit make check 2> $cl/6.52diffutils > /dev/null
-make install > /dev/null
+make DESTDIR=/linkpak/diffutils install > /dev/null
 peif
 
+linkpak -f diffutils
 cs
 \rm -Rf diffutils-3.6
-peif
 echo -e '(6.52) Done Building Diffutils\n'
 
 
-#6.53 Gawk
+#L6.53 Gawk
 echo -e '\n(6.53) Building Gawk'
 tar -xf gawk-4.1.4.tar.xz
 peif
 cd gawk-4.1.4
 peif
+mkdir /linkpak/gawk
 
 ./configure --prefix=/usr > /dev/null
 peif
 make -j$MAKEJFLAG > /dev/null
 peif
 rit make check 2> $cl/6.53gawk > /dev/null
-make install > /dev/null
+make DESTDIR=/linkpak/gawk install > /dev/null
 peif
 
+linkpak -f gawk
 cs
 \rm -Rf gawk-4.1.4
-peif
 echo -e '(6.53) Done Building Gawk\n'
 
 
-#6.54 Findutils
+#L6.54 Findutils
 echo -e '\n(6.54) Building Findutils'
 tar -xf findutils-4.6.0.tar.gz
 peif
 cd findutils-4.6.0
 peif
+mkdir /linkpak/findutils
 
 sed -i 's/test-lock..EXEEXT.//' tests/Makefile.in
 ./configure --prefix=/usr --localstatedir=/var/lib/locate > /dev/null
@@ -1555,43 +1612,44 @@ peif
 make -j$MAKEJFLAG > /dev/null
 peif
 rit make check 2> $cl/6.54findutils > /dev/null
-make install > /dev/null
+make DESTDIR=/linkpak/findutils install > /dev/null
 peif
-#mv -v /usr/bin/find /bin
-sed -i 's|find:=${BINDIR}|find:=/bin|' /usr/bin/updatedb
+sed -i 's|find:=${BINDIR}|find:=/bin|' /linkpak/findutils/usr/bin/updatedb
 
+linkpak -f findutils
 cs
 \rm -Rf findutils-4.6.0
-peif
 echo -e '(6.54) Done Building Findutils\n'
 
 
-#6.55 Groff
+#L6.55 Groff
 echo -e '\n(6.55) Building Groff'
 tar -xf groff-1.22.3.tar.gz
 peif
 cd groff-1.22.3
 peif
+mkdir /linkpak/groff
 
 PAGE=letter ./configure --prefix=/usr > /dev/null
 peif
 make -j1 > /dev/null
 peif
-make install > /dev/null
+make DESTDIR=/linkpak/groff install > /dev/null
 peif
 
+linkpak -f groff
 cs
 \rm -Rf groff-1.22.3
-peif
 echo -e '(6.55) Done Building Groff\n'
 
 
-#6.56 Grub
+#L6.56 Grub
 echo -e '\n(6.56) Building Grub'
 tar -xf grub-2.02.tar.xz
 peif
 cd grub-2.02
 peif
+mkdir /linkpak/grub
 
 ./configure --prefix=/usr          \
 	    --sbindir=/sbin        \
@@ -1601,63 +1659,65 @@ peif
 peif
 make -j$MAKEJFLAG > /dev/null
 peif
-make install > /dev/null
+make DESTDIR=/linkpak/grub install > /dev/null
 peif
 
+linkpak -f grub
 cs
 \rm -Rf grub-2.02
-peif
 echo -e '(6.56) Done Building Grub\n'
 
 
-#6.57 Less
+#L6.57 Less
 echo -e '\n(6.57) Building Less'
 tar -xf less-487.tar.gz
 peif
 cd less-487
 peif
+mkdir /linkpak/less
 
 ./configure --prefix=/usr --sysconfdir=/etc > /dev/null
 peif
 make -j$MAKEJFLAG > /dev/null
 peif
-make install > /dev/null
+make DESTDIR=/linkpak/less install > /dev/null
 peif
 
+linkpak -f less
 cs
 \rm -Rf less-487
-peif
 echo -e '(6.57) Done Building Less\n'
 
 
-#6.58 Gzip
+#L6.58 Gzip
 echo -e '\n(6.58) Building Gzip'
 tar -xf gzip-1.8.tar.xz
 peif
 cd gzip-1.8
 peif
+mkdir /linkpak/gzip
 
 ./configure --prefix=/usr > /dev/null
 peif
 make -j$MAKEJFLAG > /dev/null
 peif
 rit make check 2> $cl/6.58gzip > /dev/null
-make install > /dev/null
+make DESTIDIR=/linkpak/gzip install > /dev/null
 peif
-#mv -v /usr/bin/gzip /bin
 
+linkpak -f gzip
 cs
 \rm -Rf gzip-1.8
-peif
 echo -e '(6.58) Done building gzip\n'
 
 
-#6.59 iproute2
+#L6.59 iproute2
 echo -e '\n(6.59) Building iproute2'
 tar -xf iproute2-4.12.0.tar.xz
 peif
 cd iproute2-4.12.0
 peif
+mkdir /linkpak/iproute2
 
 sed -i /ARPD/d Makefile
 sed -i 's/arpd.8//' man/man8/Makefile
@@ -1666,21 +1726,22 @@ sed -i 's/m_ipt.o//' tc/Makefile
 
 make -j$MAKEJFLAG > /dev/null
 peif
-make DOCDIR=/usr/share/doc/iproute2-4.12.0 install > /dev/null
+make DESTDIR=/linkpak/iproute2 DOCDIR=/usr/share/doc/iproute2-4.12.0 install > /dev/null
 peif
 
+linkpak -f iproute2
 cs
 \rm -Rf iproute2-4.12.0
-peif
 echo -e '(6.59) Done Building Iproute2\n'
 
 
-#6.60 Kbd
+#L6.60 Kbd
 echo -e '\n(6.60) Building Kbd'
 tar -xf kbd-2.0.4.tar.xz
 peif
 cd kbd-2.0.4
 peif
+mkdir /linkpak/kbd
 
 patch -Np1 -i ../kbd-2.0.4-backspace-1.patch
 peif
@@ -1691,84 +1752,88 @@ peif
 make -j$MAKEJFLAG > /dev/null
 peif
 rit make check 2> $cl/6.60kbd > /dev/null
-make install > /dev/null
+make DESTDIR=/linkpak/kbd install > /dev/null
 peif
 
+linkpak -f kbd
 cs
 \rm -Rf kbd-2.0.4
-peif
 echo -e '(6.60) Done Building Kbd\n'
 
 
-#6.61 Libpipeline
+#L6.61 Libpipeline
 echo -e '\n(6.61) Building Libpipeline'
 tar -xf libpipeline-1.4.2.tar.gz
 peif
 cd libpipeline-1.4.2
 peif
+mkdir /linkpak/libpipeline
 
 PKG_CONFIG_PATH=/tools/lib/pkgconfig ./configure --prefix=/usr > /dev/null
 peif
 make -j$MAKEJFLAG > /dev/null
 peif
 rit make check 2> $cl/6.61libpipeline > /dev/null
-make install > /dev/null
+make DESTDIR=/linkpak/libpipeline install > /dev/null
 peif
 
+linkpak -f libpipeline
 cs
 \rm -Rf libpipeline-1.4.2
-peif
 echo -e '(6.61) Done Building Libpipeline\n'
 
 
-#6.62 make
+#L6.62 make
 echo -e '\n(6.62) Building Make'
 tar -xf make-4.2.1.tar.bz2
 peif
 cd make-4.2.1
 peif
+mkdir /linkpak/make
 
 ./configure --prefix=/usr > /dev/null
 peif
 make -j$MAKEJFLAG > /dev/null
 peif
 rit make PERL5LIB=$PWD/tests/ check 2> $cl/6.62make > /dev/null
-make install > /dev/null
+make DESTDIR=/linkpak/make install > /dev/null
 peif
 
+linkpak -f make
 cs
 \rm -Rf make-4.2.1
-peif
 echo -e '(6.62) Done Building Make\n'
 
 
-#6.63 patch
+#L6.63 patch
 echo -e '\n(6.63) Building Patch'
 tar -xf patch-2.7.5.tar.xz
 peif
 cd patch-2.7.5
 peif
+mkdir /linkpak/patch
 
 ./configure --prefix=/usr > /dev/null
 peif
 make -j$MAKEJFLAG > /dev/null
 peif
 rit make check 2> $cl/6.63patch > /dev/null
-make install > /dev/null
+make DESTDIR=/linkpak/patch install > /dev/null
 peif
 
+linkpak -f patch
 cs
 \rm -Rf patch-2.7.5
-peif
 echo -e '(6.63) Done Building Patch\n'
 
 
-#6.64 D-Bus
+#L6.64 D-Bus
 echo -e '\n(6.64) Building D-Bus'
 tar -xf dbus-1.10.22.tar.gz
 peif
 cd dbus-1.10.22
 peif
+mkdir /linkpak/d-bus
 
 ./configure --prefix=/usr                       \
 	    --sysconfdir=/etc                   \
@@ -1781,26 +1846,30 @@ peif
 peif
 make -j$MAKEJFLAG > /dev/null
 peif
-make install > /dev/null
+make DESTDIR=/linkpak/d-bus install > /dev/null
 peif
-#mv -v /usr/lib/libdbus-1.so.* /lib
-ln -sf ../../lib/$(readlink /usr/lib/libdbus-1.so) /usr/lib/libdbus-1.so
-ln -sf /etc/machine-id /var/lib/dbus
+#ln -sf ../../lib/$(readlink /usr/lib/libdbus-1.so) /usr/lib/libdbus-1.so
+ln -sf /linkpak/d-bus/lib/libdbus-1.so.3.14.13 /linkpak/d-bus/lib/libdbus-1.so
+peif
+#ln -sf /etc/machine-id /var/lib/dbus
+ln -sf /linkpak/d-bus/etc/machine-id /linkpak/d-bus/var/lib/dbus
+peif
 
+linkpak -f d-bus
 cs
 \rm -Rf dbus-1.10.22
-peif
 echo -e '(6.64) Done building Dbus\n'
 
 
-#6.65 Util-linux
+#L6.65 Util-linux
 echo -e '\n(6.65) Building Util-linux'
 tar -xf util-linux-2.30.1.tar.xz
 peif
 cd util-linux-2.30.1
 peif
+mkdir /linkpak/util-linux
 
-mkdir -p /var/lib/hwclock
+mkdir /var/lib/hwclock
 ./configure ADJTIME_PATH=/var/lib/hwclock/adjtime   \
 	    --docdir=/usr/share/doc/util-linux-2.30.1 \
 	    --disable-chfn-chsh  \
@@ -1817,21 +1886,22 @@ make -j$MAKEJFLAG > /dev/null
 peif
 chown -R nobody .
 rit su nobody -s /bin/bash -c "PATH=$PATH make -k check" 2> $cl/6.65utillinux > /dev/null
-make install > /dev/null
+make DESTDIR=/linkpak/util-linux install > /dev/null
 peif
 
+linkpak -f util-linux
 cs
 \rm -Rf util-linux-2.30.1
-peif
 echo -e '(6.65) Done Building Util-linux\n'
 
 
-#6.66 Man-db
+#L6.66 Man-db
 echo -e '\n(6.66) Building Man-db'
 tar -xf man-db-2.7.6.1.tar.xz
 peif
 cd man-db-2.7.6.1
 peif
+mkdir /linkpak/man-db
 
 ./configure --prefix=/usr                        \
 	    --docdir=/usr/share/doc/man-db-2.7.6.1 \
@@ -1844,22 +1914,23 @@ peif
 peif
 make -j$MAKEJFLAG > /dev/null
 rit make check 2> $cl/6.66mandb > /dev/null
-make install > /dev/null
+make DESTDIR=/linkpak/man-db install > /dev/null
 peif
-sed -i "s:man man:root root:g" /usr/lib/tmpfiles.d/man-db.conf
+sed -i "s:man man:root root:g" /linkpak/man-db/usr/lib/tmpfiles.d/man-db.conf
 
+linkpak -f man-db
 cs
 \rm -Rf man-db-2.7.6.1
-peif
 echo -e '(6.66) Done Building Man-db\n'
 
 
-#6.67 Tar
+#L6.67 Tar
 echo -e '\n(6.67) Building Tar'
 tar -xf tar-1.29.tar.xz
 peif
 cd tar-1.29
 peif
+mkdir /linkpak/tar
 
 FORCE_UNSAFE_CONFIGURE=1  \
 ./configure --prefix=/usr \
@@ -1868,43 +1939,45 @@ peif
 make -j$MAKEJFLAG > /dev/null
 peif
 rit make check 2> $cl/6.67tar > /dev/null
-make install > /dev/null
+make DESTDIR=/linkpak/tar install > /dev/null
 peif
-make -C doc install-html docdir=/usr/share/doc/tar-1.29 > /dev/null
+make DESTDIR=/linkpak/tar -C doc install-html docdir=/usr/share/doc/tar-1.29 > /dev/null
 
+linkpak -f tar
 cs
 \rm -Rf tar-1.29
-peif
 echo -e '(6.67) Done building Tar\n'
 
 
-#6.68 texinfo
+#L6.68 texinfo
 echo -e '\n(6.68) Building Texinfo'
 tar -xf texinfo-6.4.tar.xz
 peif
 cd texinfo-6.4
 peif
+mkdir /linkpak/texinfo
 
 ./configure --prefix=/usr --disable-static > /dev/null
 peif
 make -j$MAKEJFLAG > /dev/null
 peif
 rit make check 2> $cl/6.68texinfo > /dev/null
-make install > /dev/null
+make DESTDIR=/linkpak/texinfo install > /dev/null
 peif
 
+linkpak -f texinfo
 cs
 \rm -Rf texinfo-6.4
-peif
 echo -e '(6.68) Done Building Texinfo\n'
 
 
-#6.69 vim
+#L6.69 vim
 echo -e '\n(6.69) Building vim'
 tar -xf vim-8.0.586.tar.bz2
 peif
 cd vim80
 peif
+mkdir /linkpak/vim
 
 echo '#define SYS_VIMRC_FILE "/etc/vimrc"' >> src/feature.h
 sed -i '/call/{s/split/xsplit/;s/303/492/}' src/testdir/test_recover.vim
@@ -1912,21 +1985,21 @@ sed -i '/call/{s/split/xsplit/;s/303/492/}' src/testdir/test_recover.vim
 peif
 make -j$MAKEJFLAG > /dev/null
 peif
-make install > /dev/null
+make DESTDIR=/linkpak/vim install > /dev/null
 peif
-ln -s vim /usr/bin/vi
-for L in  /usr/share/man/{,*/}man1/vim.1; do
+ln -s /linkpak/vim/usr/bin/vim /linkpak/vim/usr/bin/vi
+for L in  /linkpak/vim/usr/share/man/{,*/}man1/vim.1; do
     ln -s vim.1 $(dirname $L)/vi.1
 done
-ln -s ../vim/vim80/doc /usr/share/doc/vim-8.0.586
 
+linkpak -f vim
 cs
 \rm -Rf vim80
-peif
 echo -e '(6.69) Done Building Vim\n'
 
 
 #6.71 Strip binaries
+: <<"END"
 save_lib="ld-2.26.so libc-2.26.so libpthread-2.26.so libthread_db-1.0.so"
 
 cd /lib
@@ -1960,6 +2033,9 @@ unset LIB save_lib save_usrlib
 /tools/bin/find /{bin,sbin} /usr/{bin,sbin,libexec} -type f \
 		-exec /tools/bin/strip --strip-all {} ';'
 
+END
+
+
 rm -rf /tmp/*
 rm -f /usr/lib/lib{bfd,opcodes}.a
 rm -f /usr/lib/libbz2.a
@@ -1975,6 +2051,7 @@ echo -e '(6.71) Done stripping binaries and cleaning up\n'
 #Chapter 7 configuration
 echo -e '\n(7.x) Configuring system'
 
+mkdir -p /etc/systemd/network/
 mv /SYSTEMD_NET_CONFIG /etc/systemd/network/10-eth0-static.network
 peif
 mv /RESOLV_CONF /etc/resolv.conf
