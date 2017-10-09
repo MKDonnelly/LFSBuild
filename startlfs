@@ -166,6 +166,12 @@ echo Building the toolchain
 su - lfs
 echo Done building the toolchain
 
+#Copy linkpak over for building the final system
+mkdir -p ${LFS}/usr/sbin/
+peif
+cp linkpak /${LFS}/usr/sbin/
+peif
+
 #Change ownership of the LFS directory back to root
 echo Building the system
 
@@ -198,18 +204,12 @@ chroot "$LFS" /tools/bin/env -i \
 peif
 echo Done building the system
 
+
 #The system is build, now configure and clean it
 
 #Create /etc/fstab
 echo "$(blkid | grep $PART | cut -f 2 -d ' ' | sed 's/://g') / ext4 defaults 0 1" >> $LFS/etc/fstab
 peif
-
-#Add OS information
-echo -e 'NAME="Linux From Scratch"
-VERSION="8.1-Systemd"
-ID=LFS
-PRETTY_NAME="Linux From Scratch Version 8.1-Systemd"
-VERSION_CODENAME=""' > $LFS/etc/os-release
 
 #Remove the scripts and source code used to build the system
 \rm $LFS/{lfsbuildinittools,lfsbuildsystem}

@@ -146,7 +146,7 @@ peif
 cp -r dest/include/* /linkpak/linux-api/usr/include/
 peif
 
-linkpak -f linux-api
+linkpak -f -I linux-api
 cs
 \rm -Rf linux-4.12.7
 echo -e '(6.7) Done Building Linux API Headers\n'
@@ -162,7 +162,7 @@ mkdir /linkpak/man-pages
 make DESTDIR=/linkpak/man-pages install > /dev/null
 peif
 
-linkpak -f man-pages
+linkpak -f -I man-pages
 cs
 \rm -Rf man-pages-4.12
 echo -e '(6.8) Done Building Man-pages\n'
@@ -220,13 +220,12 @@ peif
 make DESTDIR=/linkpak/glibc install > /dev/null
 peif
 
-mkdir /linkpak/glibc/etc/
 cp ../nscd/nscd.conf /linkpak/glibc/etc/nscd.conf
 mkdir -p /linkpak/glibc/var/cache/nscd
 install -Dm644 ../nscd/nscd.tmpfiles /linkpak/glibc/usr/lib/tmpfiles.d/nscd.conf
 install -Dm644 ../nscd/nscd.service /linkpak/glibc/lib/systemd/system/nscd.service
 
-linkpak -f glibc
+linkpak -f -I glibc
 
 mkdir -p /usr/lib/locale
 #localedef -i cs_CZ -f UTF-8 cs_CZ.UTF-8
@@ -346,7 +345,7 @@ make DESTDIR=/linkpak/zlib/ install > /dev/null
 peif
 ln -sf /linkpak/zlib/usr/lib/libz.so.1.2.11 /linkpak/zlib/usr/lib/libz.so
 
-linkpak -f zlib
+linkpak -f -I zlib
 cs
 \rm -Rf zlib-1.2.11
 echo -e '(6.11) Done Building Zlib\n'
@@ -368,7 +367,7 @@ rit make check 2> $cl/6.12file > /dev/null
 make DESTDIR=/linkpak/file install > /dev/null
 peif
 
-linkpak -f file
+linkpak -f -I file
 cs
 \rm -Rf file-5.31
 echo -e '(6.12) Done Building File\n'
@@ -398,7 +397,7 @@ peif
 ln -sf /linkpak/readline/usr/lib/libreadline.so.7 /linkpak/readline/usr/lib/libreadline.so
 ln -sf /linkpak/readline/usr/lib/libhistory.so.7 /linkpak/readline/usr/lib/libhistory.so
 
-linkpak -f readline
+linkpak -f -I readline
 cs
 \rm -Rf readline-7.0
 echo -e '(6.13) Done Building Readline'
@@ -419,7 +418,7 @@ peif
 make DESTDIR=/linkpak/m4 install > /dev/null
 peif
 
-linkpak -f m4
+linkpak -f -I m4
 cs
 \rm -Rf m4-1.4.18
 echo -e '(6.14) Done Building m4\n'
@@ -464,7 +463,7 @@ rit echo "quit" | ./bc/bc -l Test/checklib.b 2> $cl/6.15bc > /dev/null
 make DESTDIR=/linkpak/bc/ install > /dev/null
 peif
 
-linkpak -f bc
+linkpak -f -I bc
 cs
 \rm -Rf bc-1.07.1
 echo -e '(6.15) Done Building bc'
@@ -499,7 +498,7 @@ rit make -k check 2> $cl/6.16binutils > /dev/null
 make DESTDIR=/linkpak/binutils tooldir=/usr install > /dev/null
 peif
 
-linkpak -f binutils
+linkpak -f -I binutils
 cs
 \rm -Rf binutils-2.29
 echo -e '(6.16) Done Building Binutils\n'
@@ -525,7 +524,7 @@ rit awk '/# PASS:/{total+=$3} ; END{print total}' gmp-check-log
 make DESTDIR=/linkpak/gmp install > /dev/null
 peif
 
-linkpak -f gmp
+linkpak -f -I gmp
 cs
 \rm -Rf gmp-6.1.2
 echo -e '(6.18) Done Building GMP'
@@ -550,7 +549,7 @@ rit make check 2> $cl/6.18mpfr > /dev/null
 make DESTDIR=/linkpak/mpfr install > /dev/null
 peif
 
-linkpak -f mpfr
+linkpak -f -I mpfr
 cs
 \rm -Rf mpfr-3.1.5
 echo -e '(6.18) Done Building MPFR\n'
@@ -574,7 +573,7 @@ rit make check 2> $cl/6.19mpc > /dev/null
 make DESTDIR=/linkpak/mpc install > /dev/null
 peif
 
-linkpak -f mpc
+linkpak -f -I mpc
 cs
 \rm -Rf mpc-1.0.3
 peif
@@ -626,7 +625,7 @@ install -dm755 /linkpak/gcc/usr/lib/bfd-plugins
 ln -sf /linkpak/gcc/usr/libexec/gcc/$(gcc -dumpmachine)/7.2.0/liblto_plugin.so \
    /linkpak/gcc/usr/lib/bfd-plugins/
 
-linkpak -f gcc
+linkpak -f -I gcc
 
 #Test compiler
 echo 'int main(){}' > dummy.c
@@ -689,7 +688,7 @@ ln -s /linkpak/bzip2/bin/bzip2 /linkpak/bzip2/bin/bunzip2
 #ln -s /bin/bzip2 /bin/bzcat
 ln -s /linkpak/bzip2/bin/bzip2 /linkpak/bzip2/bin/bzcat
 
-linkpak -f bzip2
+linkpak -f -I bzip2
 cs
 \rm -Rf bzip2-1.0.6
 echo -e '(6.21) Done Building Bzip2\n'
@@ -714,7 +713,7 @@ rit make check 2> $cl/6.22pkgconfig > /dev/null
 make DESTDIR=/linkpak/pkg-config install > /dev/null
 peif
 
-linkpak -f pkg-config
+linkpak -f -I pkg-config
 cs
 \rm -Rf pkg-config-0.29.2
 echo -e '(6.22) Done Building pkg-config\n'
@@ -765,7 +764,7 @@ peif
 ln -sfv ./libncurses.so /linkpak/ncurses/usr/lib/libcurses.so
 peif
 
-linkpak -f ncurses
+linkpak -f -I ncurses
 cs
 \rm -Rf ncurses-6.0
 echo -e '(6.24) Done Building Ncurses\n'
@@ -797,7 +796,7 @@ peif
 chmod 755 /linkpak/attr/usr/lib/libattr.so
 ln -sf /linkpak/attr/usr/lib/libattr.so.1 /linkpak/attr/usr/lib/libattr.so
 
-linkpak -f attr
+linkpak -f -I attr
 cs
 \rm -Rf attr-2.4.47
 echo -e '(6.24) Done Building Attr\n'
@@ -828,7 +827,7 @@ peif
 chmod 755 /linkpak/acl/usr/lib/libacl.so
 ln -sf /linkpak/acl/usr/lib/libacl.so.1 /linkpak/acl/usr/lib/libacl.so
 
-linkpak -f acl
+linkpak -f -I acl
 cs
 \rm -Rf acl-2.2.52
 echo -e '(6.25) Done Building ACL\n'
@@ -852,7 +851,7 @@ peif
 chmod 755 /linkpak/libcap/usr/lib/libcap.so
 ln -sf /linkpak/libcap/usr/lib/libcap.so.2 /linkpak/libcap/usr/lib/libcap.so
 
-linkpak -f libcap
+linkpak -f -I libcap
 cs
 \rm -Rf libcap-2.25
 echo -e '(6.26) Done Building Libcap\n'
@@ -876,7 +875,7 @@ peif
 make DESTDIR=/linkpak/sed/ install > /dev/null
 peif
 
-linkpak -f sed
+linkpak -f -I sed
 cs
 \rm -Rf sed-4.4
 echo -e '(6.27) Done Building Sed\n'
@@ -904,7 +903,7 @@ make -j$MAKEJFLAG > /dev/null
 peif
 make DESTDIR=/linkpak/shadow install > /dev/null
 peif
-linkpak -f shadow
+linkpak -f -I shadow
 
 pwconv
 peif
@@ -930,7 +929,7 @@ peif
 make DESTDIR=/linkpak/psmisc install > /dev/null
 peif
 
-linkpak -f psmisc
+linkpak -f -I psmisc
 cs
 \rm -Rf psmisc-23.1
 echo -e '(6.29) Done Building psmisc\n'
@@ -949,7 +948,7 @@ peif
 make DESTDIR=/linkpak/iana-etc install > /dev/null
 peif
 
-linkpak -f iana-etc
+linkpak -f -I iana-etc
 cs
 \rm -Rf iana-etc-2.30
 echo -e '(6.30) Done building iana-etc\n'
@@ -970,7 +969,7 @@ peif
 make DESTDIR=/linkpak/bison install > /dev/null
 peif
 
-linkpak -f bison
+linkpak -f -I bison
 cs
 \rm -Rf bison-3.0.4
 echo -e '(6.31) Done Building Bison\n'
@@ -996,7 +995,7 @@ make DESTDIR=/linkpak/flex install > /dev/null
 peif
 ln -s /linkpak/flex/usr/bin/flex /linkpak/flex/usr/bin/lex
 
-linkpak -f flex
+linkpak -f -I flex
 cs
 \rm -Rf flex-2.6.4
 echo -e '(6.32) Done Building Flex\n'
@@ -1018,7 +1017,7 @@ rit make check 2> $cl/6.33grep > /dev/null
 make DESTDIR=/linkpak/grep install > /dev/null
 peif
 
-linkpak -f grep
+linkpak -f -I grep
 cs
 \rm -Rf grep-3.1
 echo -e '(6.33) Done building Grep\n'
@@ -1046,7 +1045,7 @@ rit su nobody -s /bin/bash -c "PATH=$PATH make tests" 2> $cl/6.24bash > /dev/nul
 make DESTDIR=/linkpak/bash install > /dev/null
 peif
 
-linkpak -f bash
+linkpak -f -I bash
 cs
 \rm -Rf bash-4.4
 echo -e '(6.34) Done Building Bash\n'
@@ -1068,7 +1067,7 @@ rit make check 2> $cl/6.35libtool > /dev/null
 make DESTDIR=/linkpak/libtool install > /dev/null
 peif
 
-linkpak -f libtool
+linkpak -f -I libtool
 cs
 \rm -Rf libtool-2.4.6
 echo -e '(6.35) Done Building Libtool\n'
@@ -1092,7 +1091,7 @@ rit make check 2> $cl/6.36gdbm > /dev/null
 make DESTDIR=/linkpak/gdbm install > /dev/null
 peif
 
-linkpak -f gdbm
+linkpak -f -I gdbm
 cs
 \rm -Rf gdbm-1.13
 echo -e '(6.36) Done Building GDBM\n'
@@ -1114,7 +1113,7 @@ rit make -j1 check 2> $cl/6.37gperf > /dev/null
 make DESTDIR=/linkpak/gperf install > /dev/null
 peif
 
-linkpak -f gperf
+linkpak -f -I gperf
 cs
 \rm -Rf gperf-3.1
 echo -e '(6.37) Done Building Gperf\n'
@@ -1137,7 +1136,7 @@ rit make check 2> $cl/6.38expat > /dev/null
 make DESTDIR=/linkpak/expat install > /dev/null
 peif
 
-linkpak -f expat
+linkpak -f -I expat
 cs
 \rm -Rf expat-2.2.3
 echo -e '(6.38) Done Building Expat\n'
@@ -1169,7 +1168,7 @@ peif
 mkdir /linkpak/inetutils/usr/sbin/
 mv /linkpak/inetutils/usr/{bin,sbin}/ifconfig
 
-linkpak -f inetutils
+linkpak -f -I inetutils
 cs
 \rm -Rf inetutils-1.9.4
 echo -e '(6.39) Done Building inetutils\n'
@@ -1202,7 +1201,7 @@ make DESTDIR=/linkpak/perl install > /dev/null
 peif
 unset BUILD_ZLIB BUILD_BZIP2
 
-linkpak -f perl
+linkpak -f -I perl
 cs
 \rm -Rf perl-5.26.0
 echo -e '(6.40) Done Building Perl\n'
@@ -1224,7 +1223,7 @@ rit make test 2> $cl/6.41xmlparser > /dev/null
 make DESTDIR=/linkpak/xml-parser install > /dev/null
 peif
 
-linkpak -f xml-parser
+linkpak -f -I xml-parser
 cs
 \rm -Rf XML-Parser-2.44
 echo -e '(6.41) Done Building XML::Parser\n'
@@ -1248,7 +1247,7 @@ make DESTDIR=/linkpak/intltool install > /dev/null
 peif
 install -Dm644 doc/I18N-HOWTO /linkpak/intltool/usr/share/doc/intltool-0.51.0/I18N-HOWTO
 
-linkpak -f intltool
+linkpak -f -I intltool
 cs
 \rm -Rf intltool-0.51.0
 echo -e '(6.42) Done Building intltool\n'
@@ -1270,7 +1269,7 @@ rit make check 2> $cl/6.43autoconf > /dev/null
 make DESTDIR=/linkpak/autoconf install > /dev/null
 peif
 
-linkpak -f autoconf
+linkpak -f -I autoconf
 cs
 \rm -Rf autoconf-2.69
 echo -e '(6.43) Done Building Autoconf'
@@ -1293,7 +1292,7 @@ rit make -j4 check 2> $cl/6.44automake > /dev/null
 make DESTDIR=/linkpak/automake install > /dev/null
 peif
 
-linkpak -f automake
+linkpak -f -I automake
 cs
 \rm -Rf automake-1.15.1
 echo -e '(6.44) Done Building Automake\n'
@@ -1318,7 +1317,7 @@ make DESTDIR=/linkpak/xz install > /dev/null
 peif
 ll /linkpak/xz/usr/lib/liblzma.so.5.2.3 /linkpak/xz/usr/lib/liblzma.so
 
-linkpak -f xz
+linkpak -f -I xz
 cs
 \rm -Rf xz-5.2.3
 echo -e '(6.45) Done Building Xz\n'
@@ -1349,7 +1348,7 @@ for target in depmod insmod lsmod modinfo modprobe rmmod; do
 done
 ln -sf /linkpak/kmod/bin/kmod /linkpak/kmod/bin/lsmod
 
-linkpak -f kmod
+linkpak -f -I kmod
 cs
 \rm -Rf kmod-24
 echo -e '(6.46) Done Building Kmod\n'
@@ -1377,7 +1376,7 @@ make DESTDIR=/linkpak/gettext install > /dev/null
 peif
 chmod 0755 /linkpak/gettext/usr/lib/preloadable_libintl.so
 
-linkpak -f gettext
+linkpak -f -I gettext
 cs
 \rm -Rf gettext-0.19.8.1
 echo -e '(6.47) Done Building Gettext\n'
@@ -1434,7 +1433,7 @@ done
 mkdir /linkpak/systemd/sbin/
 ln -sf /linkpak/systemd/lib/systemd/systemd /linkpak/systemd/sbin/init
 
-linkpak -f systemd
+linkpak -f -I systemd
 systemd-machine-id-setup
 cs
 \rm -Rf systemd-234
@@ -1466,7 +1465,7 @@ make DESTDIR=/linkpak/procps-ng install > /dev/null
 peif
 ln -sf /linkpak/procps-ng/usr/lib/libprocps.so.6.0.0 /linkpak/procps-ng/usr/lib/libprocps.so
 
-linkpak -f procps-ng
+linkpak -f -I procps-ng
 cs
 \rm -Rf procps-ng-3.3.12
 echo -e '(6.49) Done Building procps-ng\n'
@@ -1508,7 +1507,7 @@ chmod u+w /linkpak/e2fsprogs/usr/lib/{libcom_err,libe2p,libext2fs,libss}.a
 gunzip /linkpak/e2fsprogs/usr/share/info/libext2fs.info.gz
 install-info --dir-file=/usr/share/info/dir /linkpak/e2fsprogs/usr/share/info/libext2fs.info
 
-linkpak -f e2fsprogs
+linkpak -f -I e2fsprogs
 cs
 \rm -Rf e2fsprogs-1.43.5
 echo -e '(6.50) Done Building e2fsprogs\n'
@@ -1548,7 +1547,7 @@ sed -i s/\"1\"/\"8\"/1 /linkpak/coreutils/usr/share/man/man8/chroot.8
 
 #When installing coreutils, /usr/bin/ln will be temporarily unavailable.
 #Utilize /tools/bin/ln when doing this
-PATH=/tools/bin/ /usr/sbin/linkpak coreutils
+PATH=/tools/bin/ /usr/sbin/linkpak -f -I coreutils
 cs
 \rm -Rf coreutils-8.27
 echo -e '(6.51) Done Building Coreutils\n'
@@ -1570,7 +1569,7 @@ rit make check 2> $cl/6.52diffutils > /dev/null
 make DESTDIR=/linkpak/diffutils install > /dev/null
 peif
 
-linkpak -f diffutils
+linkpak -f -I diffutils
 cs
 \rm -Rf diffutils-3.6
 echo -e '(6.52) Done Building Diffutils\n'
@@ -1592,7 +1591,7 @@ rit make check 2> $cl/6.53gawk > /dev/null
 make DESTDIR=/linkpak/gawk install > /dev/null
 peif
 
-linkpak -f gawk
+linkpak -f -I gawk
 cs
 \rm -Rf gawk-4.1.4
 echo -e '(6.53) Done Building Gawk\n'
@@ -1616,7 +1615,7 @@ make DESTDIR=/linkpak/findutils install > /dev/null
 peif
 sed -i 's|find:=${BINDIR}|find:=/bin|' /linkpak/findutils/usr/bin/updatedb
 
-linkpak -f findutils
+linkpak -f -I findutils
 cs
 \rm -Rf findutils-4.6.0
 echo -e '(6.54) Done Building Findutils\n'
@@ -1637,7 +1636,7 @@ peif
 make DESTDIR=/linkpak/groff install > /dev/null
 peif
 
-linkpak -f groff
+linkpak -f -I groff
 cs
 \rm -Rf groff-1.22.3
 echo -e '(6.55) Done Building Groff\n'
@@ -1662,7 +1661,7 @@ peif
 make DESTDIR=/linkpak/grub install > /dev/null
 peif
 
-linkpak -f grub
+linkpak -f -I grub
 cs
 \rm -Rf grub-2.02
 echo -e '(6.56) Done Building Grub\n'
@@ -1683,7 +1682,7 @@ peif
 make DESTDIR=/linkpak/less install > /dev/null
 peif
 
-linkpak -f less
+linkpak -f -I less
 cs
 \rm -Rf less-487
 echo -e '(6.57) Done Building Less\n'
@@ -1705,7 +1704,7 @@ rit make check 2> $cl/6.58gzip > /dev/null
 make DESTIDIR=/linkpak/gzip install > /dev/null
 peif
 
-linkpak -f gzip
+linkpak -f -I gzip
 cs
 \rm -Rf gzip-1.8
 echo -e '(6.58) Done building gzip\n'
@@ -1729,7 +1728,7 @@ peif
 make DESTDIR=/linkpak/iproute2 DOCDIR=/usr/share/doc/iproute2-4.12.0 install > /dev/null
 peif
 
-linkpak -f iproute2
+linkpak -f -I iproute2
 cs
 \rm -Rf iproute2-4.12.0
 echo -e '(6.59) Done Building Iproute2\n'
@@ -1755,7 +1754,7 @@ rit make check 2> $cl/6.60kbd > /dev/null
 make DESTDIR=/linkpak/kbd install > /dev/null
 peif
 
-linkpak -f kbd
+linkpak -f -I kbd
 cs
 \rm -Rf kbd-2.0.4
 echo -e '(6.60) Done Building Kbd\n'
@@ -1777,7 +1776,7 @@ rit make check 2> $cl/6.61libpipeline > /dev/null
 make DESTDIR=/linkpak/libpipeline install > /dev/null
 peif
 
-linkpak -f libpipeline
+linkpak -f -I libpipeline
 cs
 \rm -Rf libpipeline-1.4.2
 echo -e '(6.61) Done Building Libpipeline\n'
@@ -1799,7 +1798,7 @@ rit make PERL5LIB=$PWD/tests/ check 2> $cl/6.62make > /dev/null
 make DESTDIR=/linkpak/make install > /dev/null
 peif
 
-linkpak -f make
+linkpak -f -I make
 cs
 \rm -Rf make-4.2.1
 echo -e '(6.62) Done Building Make\n'
@@ -1821,7 +1820,7 @@ rit make check 2> $cl/6.63patch > /dev/null
 make DESTDIR=/linkpak/patch install > /dev/null
 peif
 
-linkpak -f patch
+linkpak -f -I patch
 cs
 \rm -Rf patch-2.7.5
 echo -e '(6.63) Done Building Patch\n'
@@ -1855,7 +1854,7 @@ peif
 ln -sf /linkpak/d-bus/etc/machine-id /linkpak/d-bus/var/lib/dbus
 peif
 
-linkpak -f d-bus
+linkpak -f -I d-bus
 cs
 \rm -Rf dbus-1.10.22
 echo -e '(6.64) Done building Dbus\n'
@@ -1889,7 +1888,7 @@ rit su nobody -s /bin/bash -c "PATH=$PATH make -k check" 2> $cl/6.65utillinux > 
 make DESTDIR=/linkpak/util-linux install > /dev/null
 peif
 
-linkpak -f util-linux
+linkpak -f -I util-linux
 cs
 \rm -Rf util-linux-2.30.1
 echo -e '(6.65) Done Building Util-linux\n'
@@ -1918,7 +1917,7 @@ make DESTDIR=/linkpak/man-db install > /dev/null
 peif
 sed -i "s:man man:root root:g" /linkpak/man-db/usr/lib/tmpfiles.d/man-db.conf
 
-linkpak -f man-db
+linkpak -f -I man-db
 cs
 \rm -Rf man-db-2.7.6.1
 echo -e '(6.66) Done Building Man-db\n'
@@ -1943,7 +1942,7 @@ make DESTDIR=/linkpak/tar install > /dev/null
 peif
 make DESTDIR=/linkpak/tar -C doc install-html docdir=/usr/share/doc/tar-1.29 > /dev/null
 
-linkpak -f tar
+linkpak -f -I tar
 cs
 \rm -Rf tar-1.29
 echo -e '(6.67) Done building Tar\n'
@@ -1965,7 +1964,7 @@ rit make check 2> $cl/6.68texinfo > /dev/null
 make DESTDIR=/linkpak/texinfo install > /dev/null
 peif
 
-linkpak -f texinfo
+linkpak -f -I texinfo
 cs
 \rm -Rf texinfo-6.4
 echo -e '(6.68) Done Building Texinfo\n'
@@ -1992,37 +1991,13 @@ for L in  /linkpak/vim/usr/share/man/{,*/}man1/vim.1; do
     ln -s vim.1 $(dirname $L)/vi.1
 done
 
-linkpak -f vim
+linkpak -f -I vim
 cs
 \rm -Rf vim80
 echo -e '(6.69) Done Building Vim\n'
 
 
 #6.71 Strip binaries
-: <<"END"
-save_lib="ld-2.26.so libc-2.26.so libpthread-2.26.so libthread_db-1.0.so"
-
-cd /lib
-
-for LIB in $save_lib; do
-    objcopy --only-keep-debug $LIB $LIB.dbg
-    strip --strip-unneeded $LIB
-    objcopy --add-gnu-debuglink=$LIB.dbg $LIB
-done
-
-save_usrlib="libquadmath.so.0.0.0 libstdc++.so.6.0.24
-             libmpx.so.2.0.1 libmpxwrappers.so.2.0.1 libitm.so.1.0.0
-             libcilkrts.so.5.0.0 libatomic.so.1.2.0"
-
-cd /usr/lib
-
-for LIB in $save_usrlib; do
-    objcopy --only-keep-debug $LIB $LIB.dbg
-    strip --strip-unneeded $LIB
-    objcopy --add-gnu-debuglink=$LIB.dbg $LIB
-done
-
-unset LIB save_lib save_usrlib
 
 /tools/bin/find /usr/lib -type f -name \*.a \
 		-exec /tools/bin/strip --strip-debug {} ';'
@@ -2032,9 +2007,6 @@ unset LIB save_lib save_usrlib
 
 /tools/bin/find /{bin,sbin} /usr/{bin,sbin,libexec} -type f \
 		-exec /tools/bin/strip --strip-all {} ';'
-
-END
-
 
 rm -rf /tmp/*
 rm -f /usr/lib/lib{bfd,opcodes}.a
@@ -2062,6 +2034,19 @@ echo -e '0.0 0 0.0\n0\nLOCAL' > /etc/adjtime
 echo "LANG=en_US" > /etc/locale.conf
 echo -e 'set bell-style none' > /etc/inputrc
 echo -e '/bin/sh\n/bin/bash' > /etc/shells
+echo -e 'NAME="Linux From Scratch"
+VERSION="8.1-Systemd"
+ID=LFS
+PRETTY_NAME="Linux From Scratch Version 8.1-Systemd"
+VERSION_CODENAME=""' > $LFS/etc/os-release
+
+#Linkpak has been used with the following header
+#  #!/tools/bin/bash 
+#Change it to
+#  #!/bin/bash
+#so that it will still function
+sed -i 's&#!/tools/bin/bash&#!/bin/bash&' /usr/sbin/linkpak
+
 cs
 echo -e '(7.x) Done Configuring the system'
 

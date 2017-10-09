@@ -1,0 +1,139 @@
+#!/tools/bin/bash
+
+#Linkpak is a program which can manage installed source
+#packages on the system. Utilizing hard links, it can
+#easily keep track of installed files, temporarily isolate
+#a package from the system, and allow for clean uninstall
+#of a package. For a list of options, see helpfunction.
+
+function helpfunction(){
+   echo '''
+Summary of flags for linkpak
+ -f           Force a file to be installed, removing any
+              file with the same name
+ -v           Verbose option. Show which files are being 
+              linked.
+ -h           Help option. List this summary.
+ -I<package>  Install option; linkpak installs the 
+              given package name
+ -R<package>  Remove option; linkpak removes the
+              given package from the system, but
+              not from the package directory.
+ -P<package>  Purge option; in addition to -R,
+              remove the file of <package> from
+              the package directory.
+ -L<package>  List the installed files from 
+              the given package on the system.
+ -F<file>     Find option; given a file name, determine
+              what package--if any-- installed it on
+              the system.
+
+In addition to these options, /etc/linkpak.conf
+can contain the following options:
+ WORKINGDIR=<dir>  Directory where packages are stored'''
+   exit
+}
+
+#The directory where packages are stored
+#in their individual directory. The default
+#will be overwritten below
+WORKINGDIR=/linkpak/
+
+[ -e /etc/linkpak.conf ] && source /etc/linkpak.conf
+
+#Option to ln when linking
+LNARGS=""
+
+#Possible actions to take
+#  Install - 1
+#  Remove  - 2
+#  Purge   - 3
+#  List    - 4
+#  Find    - 5
+ACTION=1
+ACTIONARG=""
+
+while getopts hfvI:R:P:L:F: opt; do
+   case $opt in 
+      f ) LNARGS=${LNARGS}" -f " ;;
+      v ) LNARGS=${LNARGS}" -v " ;;
+      h ) helpfunction           ;;
+      I ) ACTION=1 ; ACTIONARG="$OPTARG" ;;
+      R ) ACTION=2 ; ACTIONARG="$OPTARG" ;;
+      P ) ACTION=3 ; ACTIONARG="$OPTARG" ;;
+      L ) ACTION=4 ; ACTIONARG="$OPTARG" ;;
+      F ) ACTION=5 ; ACTIONARG="$OPTARG" ;;
+   esac
+done
+
+#The directory where the package is
+#stored.
+PACKAGEPREFIX=${WORKINGDIR}${ACTIONARG}
+
+#The find option is handled here, since
+#it does not loop through files in 
+#$WORKINGDIR. It also does not require
+#error checking.
+if [[ $ACTION == 5 ]];then
+   find $WORKINGDIR -samefile $ACTIONARG
+   exit
+fi
+
+###########Testing
+
+#Make sure a valid action is entered
+#for all options except for find.
+if [[ "$ACTIONARG" == "" ]];then
+   echo "NO ACTION SPECIFIED! Quitting."
+   exit 
+fi
+
+#Make sure the given package directory exists
+if [[ ! -d $PACKAGEPREFIX ]];then
+   echo "$PACKAGEPREFIX DOES NOT EXIST!. Quitting."
+   exit
+fi
+
+##########End testing
+
+
+#Installing, removing, purging, and listing all require
+# that each file in the workingdir directory be looped
+# through
+for file in $(find $PACKAGEPREFIX -type f -o -type l)
+do
+   #The files iterated through will be something like
+   #  /linkpakdir/thisgreatpackage/usr/lib/mylib.so
+   #Which means the destination file will be
+   #  /usr/lib/mylib.so
+   #Strip off $PACKAGEPREFIX from each file to
+   #get the destination file name
+   DESTFILENAME=${file#$PACKAGEPREFIX}
+
+   #If installing the package...
+   if [[ $ACTION == 1 ]];then 
+      mkdir -p $( dirname $DESTFILENAME )
+      ln $LNARGS $file $DESTFILENAME
+
+   #If removing a package...
+   elif [[ $ACTION == 2 ]];then
+      if [[ -e $DESTFILENAME ]];then
+         \rm $LNARGS $DESTFILENAME
+      fi
+
+   #If purging a package...
+   elif [[ $ACTION == 3 ]];then
+      \rm $LNARGS $DESTFILENAME
+      \rm -rf $PACKAGEPREFIX
+
+   #List files of a package that have been installed
+   elif [[ $ACTION == 4 ]];then
+      #Assume that if the destination file exists,
+      # it was installed by linkpak
+      if [ -f $DESTFILENAME ];then
+         echo $DESTFILENAME
+      fi
+   fi
+done
+
+
